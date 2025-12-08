@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>User Profile</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/css/toast.css" />
+    <link rel="icon" type="image/png" href="assets/images/favicon.png" />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      .profile-container {
+        max-width: 800px;
+        margin: 0 auto;
+        background: white;
+        padding: 40px;
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      .profile-header {
+        text-align: center;
+        margin-bottom: 40px;
+        padding-bottom: 30px;
+        border-bottom: 2px solid #f0f0f0;
+      }
+      .profile-avatar {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        color: white;
+        font-size: 48px;
+        font-weight: bold;
+      }
+      .profile-form {
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+      }
+      .form-group {
+        display: flex;
+        flex-direction: column;
+      }
+      .form-group label {
+        font-weight: 600;
+        color: #2c3e50;
+        margin-bottom: 8px;
+        font-size: 14px;
+      }
+      .form-group input {
+        padding: 12px 15px;
+        border: 2px solid #e0e0e0;
+        border-radius: 8px;
+        font-size: 15px;
+        transition: border-color 0.3s;
+      }
+      .form-group input:focus {
+        outline: none;
+        border-color: #3498db;
+      }
+      .form-actions {
+        display: flex;
+        gap: 15px;
+        margin-top: 20px;
+      }
+      .btn-primary {
+        flex: 1;
+        padding: 14px;
+        background: #3498db;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s, transform 0.2s;
+      }
+      .btn-primary:hover {
+        background: #2980b9;
+        transform: translateY(-2px);
+      }
+      .btn-secondary {
+        flex: 1;
+        padding: 14px;
+        background: #95a5a6;
+        color: white;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.3s;
+      }
+      .btn-secondary:hover {
+        background: #7f8c8d;
+      }
+      .info-message {
+        background: #e8f5e9;
+        border-left: 4px solid #27ae60;
+        padding: 15px;
+        border-radius: 6px;
+        margin-bottom: 20px;
+        color: #27ae60;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <div class="sidebar-title">🦷 ClinicPanel</div>
+        <a href="dashboard.html" class="menu-link"
+          ><i class="fa fa-chart-line"></i> Dashboard</a
+        >
+        <a href="patients.html" class="menu-link"
+          ><i class="fa fa-user-injured"></i> Patients</a
+        >
+        <a href="medical_history.html" class="menu-link"
+          ><i class="fa fa-notes-medical"></i> Medical History</a
+        >
+        <a href="labos.html" class="menu-link"
+          ><i class="fa fa-flask"></i> Lab Work</a
+        >
+        <a href="reception.html" class="menu-link"
+          ><i class="fa fa-bell"></i> Reception</a
+        >
+        <a href="expenses.html" class="menu-link"
+          ><i class="fa fa-wallet"></i> Expense</a
+        >
+        <a href="medical.html" class="menu-link"
+          ><i class="fa fa-kit-medical"></i> Medical Supplies</a
+        >
+        <a href="appointments.html" class="menu-link"
+          ><i class="fa fa-calendar-check"></i> Appointments</a
+        >
+        <a href="chatbot.html" class="menu-link"
+          ><i class="fa fa-robot"></i> AI Chatbot</a
+        >
+        <a href="profile.html" class="menu-link active"
+          ><i class="fa fa-user-circle"></i> Profile</a
+        >
+        <div class="logout-container">
+          <button id="logoutBtn">
+            <i class="fa fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="profile-container">
+          <div class="profile-header">
+            <div class="profile-avatar" id="profileAvatar">
+              <i class="fa fa-user"></i>
+            </div>
+            <h1>User Profile</h1>
+            <p class="profile-subtitle">Manage your personal information</p>
+          </div>
+
+          <div id="successMessage" class="info-message hidden">
+            ✓ Profile updated successfully!
+          </div>
+
+          <form id="profileForm" class="profile-form">
+            <div class="form-group">
+              <label for="profileName"
+                ><i class="fa fa-user"></i> Full Name</label
+              >
+              <input
+                type="text"
+                id="profileName"
+                placeholder="Enter your full name"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="profileEmail"
+                ><i class="fa fa-envelope"></i> Email Address</label
+              >
+              <input
+                type="email"
+                id="profileEmail"
+                placeholder="Enter your email"
+                readonly
+                class="readonly-input"
+              />
+              <small class="input-helper-text">Email cannot be changed</small>
+            </div>
+
+            <div class="form-group">
+              <label for="profilePhone"
+                ><i class="fa fa-phone"></i> Phone Number</label
+              >
+              <input
+                type="tel"
+                id="profilePhone"
+                placeholder="Enter your phone number"
+                required
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="profileSpecialization"
+                ><i class="fa fa-stethoscope"></i> Specialization</label
+              >
+              <input
+                type="text"
+                id="profileSpecialization"
+                placeholder="E.g., Dentist, Orthodontist"
+              />
+            </div>
+
+            <div class="form-group">
+              <label for="profileClinic"
+                ><i class="fa fa-hospital"></i> Clinic Name</label
+              >
+              <input
+                type="text"
+                id="profileClinic"
+                placeholder="Enter your clinic name"
+              />
+            </div>
+
+            <div class="form-actions">
+              <button type="submit" class="btn-primary">
+                <i class="fa fa-save"></i> Save Changes
+              </button>
+              <button type="button" class="btn-secondary" onclick="resetForm()">
+                <i class="fa fa-undo"></i> Reset
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- Firebase Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script src="assets/js/common.js"></script>
+    <script src="assets/js/toast.js"></script>
+    <script src="assets/js/profile.js"></script>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+  </body>
+</html>

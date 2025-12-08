@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Lab Work</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+    <link rel="stylesheet" href="assets/css/toast.css" />
+    <link rel="icon" type="image/png" href="assets/images/favicon.png" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
+  <body>
+    <div class="container">
+      <div class="sidebar">
+        <div class="sidebar-title">🦷 ClinicPanel</div>
+        <a href="dashboard.html" class="menu-link"
+          ><i class="fa fa-chart-line"></i> Dashboard</a
+        >
+        <a href="patients.html" class="menu-link"
+          ><i class="fa fa-user-injured"></i> Patients</a
+        >
+        <a href="medical_history.html" class="menu-link"
+          ><i class="fa fa-notes-medical"></i> Medical History</a
+        >
+        <a href="labos.html" class="menu-link active"
+          ><i class="fa fa-flask"></i> Lab Work</a
+        >
+        <a href="reception.html" class="menu-link"
+          ><i class="fa fa-bell"></i> Reception</a
+        >
+        <a href="expenses.html" class="menu-link"
+          ><i class="fa fa-wallet"></i> Expense</a
+        >
+        <a href="medical.html" class="menu-link"
+          ><i class="fa fa-kit-medical"></i> Medical Supplies</a
+        >
+        <a href="appointments.html" class="menu-link"
+          ><i class="fa fa-calendar-check"></i> Appointments</a
+        >
+        <a href="chatbot.html" class="menu-link"
+          ><i class="fa fa-robot"></i> AI Chatbot</a
+        >
+        <a href="profile.html" class="menu-link"
+          ><i class="fa fa-user-circle"></i> Profile</a
+        >
+        <div class="logout-container">
+          <button id="logoutBtn">
+            <i class="fa fa-sign-out-alt"></i> Logout
+          </button>
+        </div>
+      </div>
+
+      <div class="content">
+        <h1>Lab Work</h1>
+
+        <!-- Search and Filter Section -->
+        <div class="search-filter-section">
+          <input
+            type="text"
+            id="searchLaboBar"
+            placeholder="🔍 Search by name..."
+          />
+          <select id="filterLaboStatus" aria-label="Filter by lab status">
+            <option value="">All Status</option>
+            <option value="Working">Working</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Sent">Sent</option>
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+          </select>
+          <button id="exportLaboBtn" class="export-btn">
+            📥 Export to CSV
+          </button>
+        </div>
+
+        <!-- Add Labo Form -->
+        <form id="laboForm">
+          <input type="text" id="laboName" placeholder="Name" required />
+          <input
+            type="number"
+            id="laboPrice"
+            placeholder="Price"
+            min="0"
+            step="0.01"
+            required
+          />
+          <input type="date" id="laboDate" title="Lab work date" required />
+          <select id="laboStatus" aria-label="Lab work status" required>
+            <option value="" disabled selected>Status</option>
+            <option value="Working">Working</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Sent">Sent</option>
+          </select>
+          <input
+            type="date"
+            id="laboSendDate"
+            placeholder="Date Sent"
+            required
+          />
+          <input type="text" id="laboNote" placeholder="Note" />
+          <button type="submit">Add Labo</button>
+        </form>
+
+        <table id="laboTable">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Price</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Send Date</th>
+              <th>Note</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Edit Labo Modal -->
+    <div id="laboModal" class="modal">
+      <div class="modal-content">
+        <span id="laboModalClose" class="close">&times;</span>
+        <h2>Edit Labo</h2>
+        <form id="laboEditForm">
+          <input type="text" id="editLaboName" placeholder="Name" required />
+          <input
+            type="number"
+            id="editLaboPrice"
+            placeholder="Price"
+            min="0"
+            step="0.01"
+            required
+          />
+          <input type="date" id="editLaboDate" title="Lab work date" required />
+          <select id="editLaboStatus" aria-label="Lab work status" required>
+            <option value="" disabled selected>Select Status</option>
+            <option value="Working">Working</option>
+            <option value="Delivered">Delivered</option>
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+            <option value="Sent">Sent</option>
+          </select>
+          <input type="date" id="editLaboSendDate" title="Send date" required />
+          <input type="text" id="editLaboNote" placeholder="Note" />
+          <button type="submit">Save Changes</button>
+        </form>
+      </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script src="assets/js/common.js"></script>
+    <script src="assets/js/labos.js"></script>
+
+    <script>
+      if (localStorage.getItem("loggedIn") !== "true") {
+        window.location.href = "index.html";
+      }
+
+      // Modal open/close handlers (you can also put these in labos.js)
+      const laboModal = document.getElementById("laboModal");
+      const laboModalClose = document.getElementById("laboModalClose");
+
+      laboModalClose.addEventListener("click", () => {
+        laboModal.style.display = "none";
+      });
+
+      window.onclick = function (event) {
+        if (event.target === laboModal) {
+          laboModal.style.display = "none";
+        }
+      };
+    </script>
+
+    <!-- Toast System -->
+    <script src="assets/js/toast.js"></script>
+    <div id="toast-container"></div>
+  </body>
+</html>

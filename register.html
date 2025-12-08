@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Register - Clinic</title>
+    <link rel="stylesheet" href="assets/css/login.css" />
+    <link rel="stylesheet" href="assets/css/toast.css" />
+    <link rel="icon" type="image/png" href="assets/images/favicon.png" />
+  </head>
+  <body>
+    <div class="login-wrapper">
+      <div class="login-box">
+        <h1>🦷 Create Account 🦷</h1>
+        <form id="registerForm">
+          <input
+            type="email"
+            id="email"
+            placeholder="Enter your email"
+            required
+          />
+          <div class="password-wrapper">
+            <input
+              type="password"
+              id="password"
+              placeholder="Enter your password (min 6 characters)"
+              required
+              minlength="6"
+            />
+          </div>
+          <div class="password-wrapper">
+            <input
+              type="password"
+              id="confirmPassword"
+              placeholder="Confirm your password"
+              required
+              minlength="6"
+            />
+          </div>
+          <button type="submit">Create Account</button>
+          <p id="errorMsg" class="error"></p>
+          <p class="login-link">
+            <a href="index.html">Already have an account? Login</a>
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-database-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script>
+      document
+        .getElementById("registerForm")
+        .addEventListener("submit", function (e) {
+          e.preventDefault();
+
+          const email = document.getElementById("email").value.trim();
+          const password = document.getElementById("password").value;
+          const confirmPassword =
+            document.getElementById("confirmPassword").value;
+          const errorMsg = document.getElementById("errorMsg");
+
+          // Validate passwords match
+          if (password !== confirmPassword) {
+            errorMsg.textContent = "❌ Passwords do not match!";
+            return;
+          }
+
+          // Validate password length
+          if (password.length < 6) {
+            errorMsg.textContent = "❌ Password must be at least 6 characters!";
+            return;
+          }
+
+          // Create user with Firebase Auth
+          firebase
+            .auth()
+            .createUserWithEmailAndPassword(email, password)
+            .then((userCredential) => {
+              const user = userCredential.user;
+
+              // Create initial profile in database
+              const db = firebase.database();
+              const profileRef = db.ref("profiles/" + user.uid);
+
+              profileRef.set({
+                email: user.email,
+                name: "",
+                phone: "",
+                specialization: "",
+                clinic: "",
+                createdAt: new Date().toISOString(),
+              });
+
+              // Store login info
+              localStorage.setItem("loggedIn", "true");
+              localStorage.setItem("uid", user.uid);
+
+              alert(
+                "✅ Account created successfully! Redirecting to dashboard..."
+              );
+              window.location.href = "dashboard.html";
+            })
+            .catch((error) => {
+              console.error("Registration error:", error);
+
+              // User-friendly error messages
+              let message = error.message;
+              if (error.code === "auth/email-already-in-use") {
+                message =
+                  "This email is already registered. Please login instead.";
+              } else if (error.code === "auth/invalid-email") {
+                message = "Invalid email address format.";
+              } else if (error.code === "auth/weak-password") {
+                message = "Password is too weak. Use at least 6 characters.";
+              }
+
+              errorMsg.textContent = "❌ " + message;
+            });
+        });
+    </script>
+
+    <!-- Toast System -->
+    <script src="assets/js/toast.js"></script>
+    <div id="toast-container"></div>
+  </body>
+</html>

@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Login</title>
+    <link rel="stylesheet" href="assets/css/login.css" />
+    <link rel="stylesheet" href="assets/css/toast.css" />
+    <link rel="icon" type="image/png" href="assets/images/favicon.png" />
+  </head>
+  <body>
+    <div class="login-wrapper">
+      <div class="login-box">
+        <h1>🦷 Clinic Access 🦷</h1>
+        <form id="loginForm">
+          <input
+            type="email"
+            id="email"
+            placeholder="Enter your email"
+            required
+          />
+          <div class="password-wrapper">
+            <input
+              type="password"
+              id="password"
+              placeholder="Enter your password"
+              required
+            />
+          </div>
+          <button type="submit">Login</button>
+          <p id="errorMsg" class="error"></p>
+          <p class="login-link">
+            <a href="register.html">Don't have an account? Register</a>
+          </p>
+        </form>
+      </div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-auth-compat.js"></script>
+    <script src="assets/js/firebase.js"></script>
+    <script src="assets/js/toast.js"></script>
+    <script src="assets/js/auth.js"></script>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+  </body>
+</html>
