@@ -11,6 +11,8 @@ const waitingRef = db.ref("waitingList/" + uid);
 const nameInput = document.getElementById("patientwaitingName");
 const phoneInput = document.getElementById("patientwaitingPhone");
 const workInput = document.getElementById("patientwaitingwork");
+const receptionFormCard = document.getElementById("receptionForm");
+const receptionSubmit = document.getElementById("receptionSubmit");
 const waitingTable = document.getElementById("waitingTable");
 
 let waitingPatients = {};
@@ -64,6 +66,7 @@ function addPatient() {
     nameInput.value = "";
     phoneInput.value = "";
     workInput.value = "";
+    receptionFormCard?.classList.add("hidden");
   });
 }
 
@@ -71,6 +74,10 @@ function addPatient() {
 workInput.addEventListener("keydown", (e) => {
   if (e.key === "Enter") addPatient();
 });
+
+if (receptionSubmit) {
+  receptionSubmit.addEventListener("click", addPatient);
+}
 
 // Listen to Firebase waitingList changes in realtime
 waitingRef.on("value", (snapshot) => {

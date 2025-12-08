@@ -57,7 +57,13 @@
       <div class="content">
         <h1>Medical Supplies</h1>
 
-        <form id="supplyForm">
+        <div class="action-group" style="margin-bottom: 10px">
+          <button class="primary-btn" data-toggle-target="supplyForm">
+            + Add Supply
+          </button>
+        </div>
+
+        <form id="supplyForm" class="hidden card collapsible">
           <input
             type="text"
             id="supplyName"
@@ -79,7 +85,16 @@
             step="0.01"
             required
           />
-          <button type="submit">Add Supply</button>
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">Add Supply</button>
+            <button
+              type="button"
+              class="ghost-btn"
+              data-toggle-target="supplyForm"
+            >
+              Cancel
+            </button>
+          </div>
         </form>
 
         <table id="supplyTable">

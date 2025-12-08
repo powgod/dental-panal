@@ -80,8 +80,14 @@
           </button>
         </div>
 
+        <div class="action-group" style="margin-bottom: 10px">
+          <button class="primary-btn" data-toggle-target="laboForm">
+            + Add Lab Work
+          </button>
+        </div>
+
         <!-- Add Labo Form -->
-        <form id="laboForm">
+        <form id="laboForm" class="hidden card collapsible">
           <input type="text" id="laboName" placeholder="Name" required />
           <input
             type="number"
@@ -105,7 +111,16 @@
             required
           />
           <input type="text" id="laboNote" placeholder="Note" />
-          <button type="submit">Add Labo</button>
+          <div class="form-actions">
+            <button type="submit" class="primary-btn">Add Labo</button>
+            <button
+              type="button"
+              class="ghost-btn"
+              data-toggle-target="laboForm"
+            >
+              Cancel
+            </button>
+          </div>
         </form>
 
         <table id="laboTable">

@@ -15,6 +15,10 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
     />
+    <link
+      href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.css"
+      rel="stylesheet"
+    />
   </head>
   <body>
     <div class="container">
@@ -55,87 +59,161 @@
       </div>
 
       <div class="content">
-        <h1>Appointment Scheduler</h1>
+        <div class="page-header-row">
+          <div>
+            <p class="eyebrow">Schedule</p>
+            <h1>Appointment Scheduler</h1>
+          </div>
+        </div>
 
-        <form id="appointmentForm">
-          <label>
-            Patient:
-            <input type="text" id="patientName" placeholder="Name" required />
-          </label>
+        <div class="card calendar-card">
+          <div class="card-header">
+            <div>
+              <h2>Calendar</h2>
+              <p class="muted">
+                View upcoming appointments and drag through the month
+              </p>
+            </div>
+            <div class="chip-group">
+              <span class="chip chip-scheduled">Scheduled</span>
+              <span class="chip chip-completed">Completed</span>
+              <span class="chip chip-cancelled">Cancelled</span>
+            </div>
+          </div>
+          <div id="appointmentCalendar"></div>
+        </div>
 
-          <label>
-            Date:
-            <input type="date" id="appointmentDate" required />
-          </label>
-
-          <label>
-            Time:
-            <input type="time" id="appointmentTime" required />
-          </label>
-
-          <label>
-            Duration (minutes):
-            <input
-              type="number"
-              id="appointmentDuration"
-              min="15"
-              max="180"
-              value="30"
-              required
-            />
-          </label>
-
-          <label>
-            Status:
-            <select id="appointmentStatus">
-              <option value="Scheduled" selected>Scheduled</option>
-              <option value="Completed">Completed</option>
-              <option value="Cancelled">Cancelled</option>
-            </select>
-          </label>
-
-          <label>
-            Notes:
-            <textarea id="appointmentNotes" rows="3"></textarea>
-          </label>
-
-          <button type="submit">Add Appointment</button>
-        </form>
-
-        <h2>Appointments</h2>
-        <div class="filter-container">
-          <label>
-            From Date:
-            <input type="date" id="startDate" />
-          </label>
-          <label>
-            To Date:
-            <input type="date" id="endDate" />
-          </label>
-          <button type="button" id="clearFilterBtn" class="btn-secondary">
-            Clear Filter
+        <div class="action-group" style="margin-bottom: 12px">
+          <button
+            class="primary-btn"
+            id="openAppointmentFormBtn"
+          >
+            + Add Appointment
           </button>
         </div>
 
-        <table id="appointmentsTable" cellspacing="0" cellpadding="5">
-          <thead>
-            <tr>
-              <th>Patient</th>
-              <th>Date</th>
-              <th>Time</th>
-              <th>Duration</th>
-              <th>Status</th>
-              <th>Notes</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
+        <div id="appointmentFormCard" class="card collapsible hidden">
+          <div class="card-header">
+            <div>
+              <p class="eyebrow">Create / Update</p>
+              <h2 id="appointmentFormTitle">Add Appointment</h2>
+            </div>
+            <button
+              type="button"
+              class="ghost-btn"
+              id="closeAppointmentFormBtn"
+              data-close-target="appointmentFormCard"
+            >
+              Cancel
+            </button>
+          </div>
+          <form id="appointmentForm" class="stacked-form">
+            <label>
+              Patient
+              <input
+                type="text"
+                id="patientName"
+                placeholder="Patient name"
+                required
+              />
+            </label>
+
+            <label>
+              Date
+              <input type="date" id="appointmentDate" required />
+            </label>
+
+            <label>
+              Time
+              <input type="time" id="appointmentTime" required />
+            </label>
+
+            <label>
+              Duration (minutes)
+              <input
+                type="number"
+                id="appointmentDuration"
+                min="15"
+                max="180"
+                value="30"
+                required
+              />
+            </label>
+
+            <label>
+              Status
+              <select id="appointmentStatus">
+                <option value="Scheduled" selected>Scheduled</option>
+                <option value="Completed">Completed</option>
+                <option value="Cancelled">Cancelled</option>
+              </select>
+            </label>
+
+            <label>
+              Notes
+              <textarea
+                id="appointmentNotes"
+                rows="3"
+                placeholder="Notes for this visit"
+              ></textarea>
+            </label>
+
+            <div class="form-actions">
+              <button type="submit" class="primary-btn" id="appointmentSubmit">
+                Add Appointment
+              </button>
+              <button
+                type="button"
+                class="ghost-btn"
+                data-close-target="appointmentFormCard"
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <h2>Appointments</h2>
+            <div class="filter-container">
+              <label>
+                From Date:
+                <input type="date" id="startDate" />
+              </label>
+              <label>
+                To Date:
+                <input type="date" id="endDate" />
+              </label>
+              <button type="button" id="clearFilterBtn" class="btn-secondary">
+                Clear Filter
+              </button>
+            </div>
+          </div>
+
+          <div class="table-wrapper">
+            <table id="appointmentsTable" cellspacing="0" cellpadding="5">
+              <thead>
+                <tr>
+                  <th>Patient</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Duration</th>
+                  <th>Status</th>
+                  <th>Notes</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
       </div>
     </div>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.js"></script>
 
     <script src="assets/js/firebase.js"></script>
     <script src="assets/js/common.js"></script>

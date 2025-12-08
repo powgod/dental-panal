@@ -1,12 +1,6 @@
-const uid = localStorage.getItem("uid");
-if (!uid) {
-  Toast.error("User not logged in");
-  window.location.href = "index.html"; // or redirect to login
-}
-
-const db = firebase.database();
-const appointmentsRef = db.ref("appointments/" + uid);
-const patientsRef = db.ref("patients/" + uid);
+let uid = localStorage.getItem("uid");
+let appointmentsRef;
+let patientsRef;
 
 const patientNameInput = document.getElementById("patientName");
 const appointmentForm = document.getElementById("appointmentForm");
@@ -16,14 +10,168 @@ const appointmentsTableBody = document.querySelector(
 const startDateInput = document.getElementById("startDate");
 const endDateInput = document.getElementById("endDate");
 const clearFilterBtn = document.getElementById("clearFilterBtn");
+const appointmentFormCard = document.getElementById("appointmentFormCard");
+const appointmentFormTitle = document.getElementById("appointmentFormTitle");
+const appointmentSubmit = document.getElementById("appointmentSubmit");
+const openFormBtn = document.getElementById("openAppointmentFormBtn");
+const closeFormBtns = document.querySelectorAll(
+  "[data-close-target='appointmentFormCard']"
+);
 
 let appointments = {};
 let patients = {};
 let editingIndex = null;
+let calendar = null;
+let fullCalendarReady = false;
 
-patientsRef.on("value", (snapshot) => {
-  patients = snapshot.val() || {};
-});
+function ensureFullCalendar() {
+  if (window.FullCalendar) {
+    fullCalendarReady = true;
+    return Promise.resolve();
+  }
+
+  const sources = [
+    "https://cdn.jsdelivr.net/npm/fullcalendar@6.1.10/main.min.js",
+    "https://unpkg.com/fullcalendar@6.1.10/main.min.js",
+    "https://cdnjs.cloudflare.com/ajax/libs/fullcalendar/6.1.10/index.global.min.js",
+  ];
+
+  const loadScript = (url) =>
+    new Promise((resolve, reject) => {
+      const existing = document.querySelector(
+        `script[data-fc-loader="true"][src="${url}"]`
+      );
+      if (existing) {
+        existing.addEventListener("load", resolve, { once: true });
+        existing.addEventListener("error", reject, { once: true });
+        return;
+      }
+      const script = document.createElement("script");
+      script.src = url;
+      script.setAttribute("data-fc-loader", "true");
+      script.onload = resolve;
+      script.onerror = reject;
+      document.head.appendChild(script);
+    });
+
+  // Try sources sequentially
+  return sources
+    .reduce(
+      (chain, url) =>
+        chain.catch(() =>
+          loadScript(url).then(() => {
+            if (window.FullCalendar) {
+              fullCalendarReady = true;
+            }
+          })
+        ),
+      Promise.reject()
+    )
+    .then(() => {
+      if (!window.FullCalendar) {
+        throw new Error("FullCalendar failed to load from all sources.");
+      }
+      fullCalendarReady = true;
+    });
+}
+
+// Normalize legacy records that might use different field names
+function normalizeAppointment(app) {
+  if (!app) return null;
+  const date = app.date || app.appointmentDate || "";
+  const time = app.time || app.appointmentTime || "";
+  const duration = Number(app.duration || app.appointmentDuration || 0);
+  return {
+    patientName: app.patientName || app.name || app.patient || "Patient",
+    date,
+    time,
+    duration,
+    status: app.status || "Scheduled",
+    notes: app.notes || "",
+  };
+}
+
+const calendarEl = document.getElementById("appointmentCalendar");
+
+function initCalendar() {
+  if (!fullCalendarReady && !window.FullCalendar) return;
+  if (!calendarEl || calendar) return;
+  calendar = new FullCalendar.Calendar(calendarEl, {
+    initialView: "dayGridMonth",
+    headerToolbar: {
+      left: "prev,next today",
+      center: "title",
+      right: "dayGridMonth,timeGridWeek,timeGridDay",
+    },
+    dayMaxEventRows: true,
+    displayEventTime: true,
+    displayEventEnd: true,
+    eventDisplay: "block",
+    eventTimeFormat: { hour: "numeric", minute: "2-digit" },
+    eventDidMount: ({ event, el }) => {
+      const notes = event.extendedProps?.notes || "";
+      const duration = event.extendedProps?.duration
+        ? `${event.extendedProps.duration} min`
+        : "";
+      const tooltip = [
+        `Patient: ${event.title}`,
+        `Status: ${event.extendedProps?.status || ""}`,
+        `Date: ${event.startStr?.split("T")[0] || ""}`,
+        `Time: ${event.start
+          ?.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) || ""}`,
+        duration ? `Duration: ${duration}` : "",
+        notes ? `Notes: ${notes}` : "",
+      ]
+        .filter(Boolean)
+        .join("\n");
+      el.setAttribute("title", tooltip);
+    },
+    eventClick: ({ event }) => {
+      if (event.id) {
+        editAppointment(event.id, true);
+      }
+    },
+    height: "auto",
+    aspectRatio: 1.55,
+  });
+  calendar.render();
+}
+
+function syncCalendar() {
+  if (!calendar) return;
+  const statusColors = {
+    Scheduled: "#3498db",
+    Completed: "#27ae60",
+    Cancelled: "#e74c3c",
+  };
+
+  const events = Object.entries(appointments)
+    .map(([key, app]) => {
+      const normalized = normalizeAppointment(app);
+      if (!normalized || !normalized.date || !normalized.time) return null;
+      const start = `${normalized.date}T${normalized.time}`;
+      const endDate = new Date(`${normalized.date}T${normalized.time}`);
+      endDate.setMinutes(
+        endDate.getMinutes() + Number(normalized.duration || 0)
+      );
+      return {
+        id: key,
+        title: `${normalized.patientName}`,
+        start,
+        end: endDate.toISOString(),
+        color: statusColors[normalized.status] || "#3498db",
+        extendedProps: {
+          status: normalized.status,
+          duration: normalized.duration,
+          notes: normalized.notes,
+        },
+      };
+    })
+    .filter(Boolean);
+
+  calendar.removeAllEvents();
+  calendar.addEventSource(events);
+}
 
 function saveAppointmentData(appointmentData) {
   if (editingIndex !== null) {
@@ -33,13 +181,36 @@ function saveAppointmentData(appointmentData) {
   }
 }
 
+function showAppointmentForm(mode = "add") {
+  if (!appointmentFormCard) return;
+  const isEdit = mode === "edit";
+  appointmentFormCard.classList.remove("hidden");
+  appointmentFormTitle.textContent = isEdit
+    ? "Update Appointment"
+    : "Add Appointment";
+  appointmentSubmit.textContent = isEdit
+    ? "Update Appointment"
+    : "Add Appointment";
+  if (!isEdit) {
+    appointmentForm.reset();
+    editingIndex = null;
+  }
+}
+
+function hideAppointmentForm() {
+  appointmentFormCard?.classList.add("hidden");
+}
+
 function renderAppointments(startDate = null, endDate = null) {
   appointmentsTableBody.innerHTML = "";
 
-  const appsArray = Object.entries(appointments).map(([key, val]) => ({
-    key,
-    ...val,
-  }));
+  const appsArray = Object.entries(appointments)
+    .map(([key, val]) => {
+      const normalized = normalizeAppointment(val);
+      if (!normalized) return null;
+      return { key, ...normalized };
+    })
+    .filter(Boolean);
 
   let filtered = appsArray;
 
@@ -67,17 +238,23 @@ function renderAppointments(startDate = null, endDate = null) {
   });
 
   filtered.forEach((app) => {
+    const statusClass =
+      app.status === "Completed"
+        ? "status-badge success"
+        : app.status === "Cancelled"
+        ? "status-badge danger"
+        : "status-badge info";
     appointmentsTableBody.innerHTML += `
         <tr>
           <td>${app.patientName}</td>
           <td>${app.date}</td>
           <td>${app.time}</td>
           <td>${app.duration} min</td>
-          <td>${app.status}</td>
+          <td><span class="${statusClass}">${app.status}</span></td>
           <td>${app.notes || ""}</td>
           <td>
-            <button onclick="editAppointment('${app.key}')">✏️</button>
-            <button onclick="deleteAppointment('${app.key}')">🗑️</button>
+            <button class="icon-btn" onclick="editAppointment('${app.key}')">✏️</button>
+            <button class="icon-btn danger" onclick="deleteAppointment('${app.key}')">🗑️</button>
           </td>
         </tr>
       `;
@@ -90,10 +267,13 @@ function hasConflict(newDate, newTime, newDuration, skipKey = null) {
 
   return Object.entries(appointments).some(([key, app]) => {
     if (key === skipKey) return false;
-    if (app.date !== newDate) return false;
+    const normalized = normalizeAppointment(app);
+    if (!normalized || normalized.date !== newDate) return false;
 
-    const appStart = new Date(`${app.date}T${app.time}`);
-    const appEnd = new Date(appStart.getTime() + app.duration * 60000);
+    const appStart = new Date(`${normalized.date}T${normalized.time}`);
+    const appEnd = new Date(
+      appStart.getTime() + (normalized.duration || 0) * 60000
+    );
 
     return newStart < appEnd && newEnd > appStart;
   });
@@ -133,31 +313,17 @@ appointmentForm.addEventListener("submit", (e) => {
       );
       appointmentForm.reset();
       editingIndex = null;
-      appointmentForm.querySelector("button").textContent = "Add Appointment";
+      showAppointmentForm("add");
+      hideAppointmentForm();
     })
     .catch((err) => {
       Toast.error("Error saving appointment: " + err.message);
     });
 });
-const logoutBtn = document.getElementById("logoutBtn");
 
-if (logoutBtn) {
-  logoutBtn.addEventListener("click", () => {
-    firebase
-      .auth()
-      .signOut()
-      .then(() => {
-        window.location.href = "index.html"; // Adjust if your login page has a different name
-      })
-      .catch((error) => {
-        console.error("Logout failed:", error);
-      });
-  });
-}
-
-window.editAppointment = function (key) {
+window.editAppointment = function (key, fromCalendar = false) {
   editingIndex = key;
-  const app = appointments[key];
+  const app = normalizeAppointment(appointments[key]);
   if (!app) return Toast.error("Appointment data not found.");
 
   patientNameInput.value = app.patientName;
@@ -166,7 +332,11 @@ window.editAppointment = function (key) {
   document.getElementById("appointmentDuration").value = app.duration;
   document.getElementById("appointmentStatus").value = app.status;
   document.getElementById("appointmentNotes").value = app.notes || "";
-  appointmentForm.querySelector("button").textContent = "Update Appointment";
+  showAppointmentForm("edit");
+
+  if (fromCalendar && openFormBtn) {
+    openFormBtn.scrollIntoView({ behavior: "smooth" });
+  }
 };
 
 window.deleteAppointment = function (key) {
@@ -175,16 +345,11 @@ window.deleteAppointment = function (key) {
   }
 };
 
-appointmentsRef.on("value", (snapshot) => {
-  appointments = snapshot.val() || {};
-  applyDateFilter();
-});
-
-// Date range filter event listeners
 function applyDateFilter() {
   const startDate = startDateInput.value || null;
   const endDate = endDateInput.value || null;
   renderAppointments(startDate, endDate);
+  syncCalendar();
 }
 
 startDateInput.addEventListener("change", applyDateFilter);
@@ -194,20 +359,70 @@ clearFilterBtn.addEventListener("click", () => {
   startDateInput.value = "";
   endDateInput.value = "";
   renderAppointments();
+  syncCalendar();
 });
 
-// Initial render
-renderAppointments();
-firebase.auth().onAuthStateChanged((user) => {
-  if (user) {
-    const uid = user.uid;
-    localStorage.setItem("uid", uid); // optional
-    const db = firebase.database();
-    const patientRef = db.ref("appointments/" + uid);
+openFormBtn?.addEventListener("click", () => showAppointmentForm("add"));
 
-    // ⬇️ Put all your app logic here (form, events, listeners, etc.)
-  } else {
-    // Not logged in → redirect
+closeFormBtns.forEach((btn) =>
+  btn.addEventListener("click", () => hideAppointmentForm())
+);
+
+const logoutBtn = document.getElementById("logoutBtn");
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    firebase
+      .auth()
+      .signOut()
+      .then(() => {
+        window.location.href = "index.html";
+      })
+      .catch((error) => {
+        console.error("Logout failed:", error);
+      });
+  });
+}
+
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    Toast.error("User not logged in");
     window.location.href = "index.html";
+    return;
   }
+
+  uid = user.uid;
+  localStorage.setItem("uid", uid);
+
+  const db = firebase.database();
+  patientsRef = db.ref("patients/" + uid);
+
+  // Listen to primary and legacy appointment paths
+  const appointmentPaths = ["appointments", "appointment"];
+  const attachAppointmentListener = (path) => {
+    db.ref(`${path}/${uid}`).on("value", (snapshot) => {
+      const data = snapshot.val() || {};
+      // prefer non-empty data; keep the last non-empty source
+      if (Object.keys(data).length > 0 || Object.keys(appointments).length === 0) {
+        appointmentsRef = db.ref(`${path}/${uid}`);
+        appointments = data;
+        applyDateFilter();
+      }
+    });
+  };
+
+  ensureFullCalendar()
+    .then(() => {
+      initCalendar();
+    })
+    .catch((err) => {
+      console.error("Failed to load FullCalendar", err);
+      Toast.error("Calendar failed to load.");
+    });
+
+  patientsRef.on("value", (snapshot) => {
+    patients = snapshot.val() || {};
+  });
+
+  appointmentPaths.forEach(attachAppointmentListener);
 });

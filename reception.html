@@ -64,24 +64,54 @@
       <div class="content">
         <h1>Reception</h1>
         <div class="clock" id="currentTime"></div>
-        <input
-          type="text"
-          id="patientwaitingName"
-          placeholder="Name"
-          required
-        />
-        <input
-          type="text"
-          id="patientwaitingPhone"
-          placeholder="Phone"
-          required
-        />
-        <input
-          type="text"
-          id="patientwaitingwork"
-          placeholder="Work"
-          required
-        />
+        <div class="action-group" style="margin-bottom: 10px">
+          <button class="primary-btn" data-toggle-target="receptionForm">
+            + Add Waiting Patient
+          </button>
+        </div>
+        <div id="receptionForm" class="hidden card collapsible">
+          <div class="stacked-form">
+            <label>
+              Name
+              <input
+                type="text"
+                id="patientwaitingName"
+                placeholder="Name"
+                required
+              />
+            </label>
+            <label>
+              Phone
+              <input
+                type="text"
+                id="patientwaitingPhone"
+                placeholder="Phone"
+                required
+              />
+            </label>
+            <label>
+              Work
+              <input
+                type="text"
+                id="patientwaitingwork"
+                placeholder="Work"
+                required
+              />
+            </label>
+          </div>
+          <div class="form-actions" style="margin-top: 10px">
+            <button type="button" class="primary-btn" id="receptionSubmit">
+              Save
+            </button>
+            <button
+              type="button"
+              class="ghost-btn"
+              data-toggle-target="receptionForm"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
         <table id="waitingTable"></table>
       </div>
     </div>

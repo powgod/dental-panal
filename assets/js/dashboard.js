@@ -1,248 +1,452 @@
-// Get UID of current user
-firebase.auth().onAuthStateChanged((user) => {
-  if (!user) {
-    // Not logged in
-    window.location.href = "index.html";
-    return;
-  }
-
-  const uid = user.uid;
-  const db = firebase.database();
-
-  const patientsRef = db.ref("patients/" + uid);
-  const receptionRef = db.ref("waitingList/" + uid);
-  const expensesRef = db.ref("fixedExpenses/" + uid);
-  const suppliesRef = db.ref("medicalSupplies/" + uid);
-  const labosRef = db.ref("labos/" + uid);
-  const profileRef = db.ref("profiles/" + uid);
-
-  // Load doctor name from profile
-  profileRef
-    .once("value")
-    .then((snapshot) => {
-      const profile = snapshot.val();
-      const doctorName = profile && profile.name ? profile.name : "Doctor";
-
-      // Update header with doctor name
-      const headerElement = document.querySelector(".dashboard-header h1");
-      if (headerElement) {
-        headerElement.innerHTML = `🦷 Welcome Back, ${doctorName}!`;
-      }
-    })
-    .catch((error) => {
-      console.error("Error loading profile:", error);
-      // Fallback to generic greeting
-      const headerElement = document.querySelector(".dashboard-header h1");
-      if (headerElement) {
-        headerElement.innerHTML = "🦷 Welcome Back, Doctor!";
-      }
-    });
-
-  // Set date
-  const now = new Date();
-  const dateElement = document.getElementById("dashboardDate");
-  if (dateElement) {
-    dateElement.textContent = now.toLocaleDateString("en-US", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-  }
-
+let uid = null;
   let revenueChart = null;
   let workTypeChart = null;
+  let barChart = null;
 
-  const metricConfigs = [
-    {
-      id: "totalPatients",
-      label: "Total Patients",
-      icon: "fa-users",
-      color: "#3498db",
-    },
-    {
-      id: "waitingPatients",
-      label: "In Reception",
-      icon: "fa-clock",
-      color: "#f39c12",
-    },
-    {
-      id: "totalPrice",
-      label: "Total Revenue",
-      icon: "fa-money-bill-wave",
-      color: "#27ae60",
-      suffix: " MAD",
-    },
-    {
-      id: "totalAdvance",
-      label: "Collected",
-      icon: "fa-wallet",
-      color: "#16a085",
-      suffix: " MAD",
-    },
-    {
-      id: "monthlyExpense",
-      label: "Monthly Expenses",
-      icon: "fa-receipt",
-      color: "#e74c3c",
-      suffix: " MAD",
-    },
-    {
-      id: "medicalInventoryCost",
-      label: "Supplies Cost",
-      icon: "fa-pills",
-      color: "#9b59b6",
-      suffix: " MAD",
-    },
-    {
-      id: "monthlyLaboExpense",
-      label: "Lab Expenses",
-      icon: "fa-flask",
-      color: "#34495e",
-      suffix: " MAD",
-    },
-    {
-      id: "laboWorkLeft",
-      label: "Pending Labs",
-      icon: "fa-tasks",
-      color: "#e67e22",
-    },
-    {
-      id: "netProfit",
-      label: "Net Profit",
-      icon: "fa-chart-line",
-      color: "#2ecc71",
-      suffix: " MAD",
-    },
-    {
-      id: "caseAmount",
-      label: "Cash in Hand",
-      icon: "fa-hand-holding-usd",
-      color: "#1abc9c",
-      suffix: " MAD",
-    },
-  ];
+const state = {
+  patients: {},
+  reception: {},
+  expenses: {},
+  supplies: {},
+  labos: {},
+  appointments: {},
+  profile: {},
+};
+
+let selectedRange = "monthly";
+let dataLoaded = false;
+
+function toggleSkeleton(show) {
+  const skeletons = document.querySelectorAll(".skeleton-block");
+  const liveBlocks = document.querySelectorAll(".live-block");
+  skeletons.forEach((el) => el.classList.toggle("hidden", !show));
+  liveBlocks.forEach((el) => el.classList.toggle("hidden", show));
+}
+
+function markDataLoaded() {
+  if (dataLoaded) return;
+  dataLoaded = true;
+  toggleSkeleton(false);
+}
+// Ensure skeletons show at start
+toggleSkeleton(true);
+
+const metricConfigs = [
+  {
+    id: "totalPatients",
+    label: "Total Patients",
+    icon: "fa-users",
+    color: "#1d7bff",
+    link: "patients.html",
+  },
+  {
+    id: "appointments",
+    label: "Appointments",
+    icon: "fa-calendar-check",
+    color: "#27ae60",
+    link: "appointments.html",
+  },
+  {
+    id: "labWork",
+    label: "Lab Work",
+    icon: "fa-flask",
+    color: "#9b59b6",
+    link: "labos.html",
+  },
+  {
+    id: "payments",
+    label: "Payments",
+    icon: "fa-wallet",
+    color: "#e67e22",
+    suffix: " MAD",
+    link: "patients.html",
+  },
+];
+
+function safeDate(value) {
+  const d = new Date(value);
+  return isNaN(d.getTime()) ? null : d;
+}
+
+function monthlyAggregate(items, dateKey, valueFn) {
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+  const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+  const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+
+  let currentTotal = 0;
+  let prevTotal = 0;
+
+  items.forEach((item) => {
+    const d = safeDate(item[dateKey]);
+    if (!d) return;
+    if (d.getMonth() === currentMonth && d.getFullYear() === currentYear) {
+      currentTotal += valueFn(item);
+    } else if (d.getMonth() === prevMonth && d.getFullYear() === prevYear) {
+      prevTotal += valueFn(item);
+    }
+  });
+
+  return { currentTotal, prevTotal };
+}
+
+function computeTrend(current, previous) {
+  if (!previous || previous === 0) return null;
+  const delta = ((current - previous) / previous) * 100;
+  return delta;
+}
+
+function rangeTotals(items, dateKey, valueFn, range = selectedRange) {
+  const now = new Date();
+  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  if (range === "weekly") {
+    const startCurrent = new Date(today);
+    startCurrent.setDate(startCurrent.getDate() - 6);
+    const endCurrent = new Date(today);
+
+    const startPrev = new Date(startCurrent);
+    startPrev.setDate(startPrev.getDate() - 7);
+    const endPrev = new Date(startCurrent);
+    endPrev.setDate(endPrev.getDate() - 1);
+
+    const inWindow = (d, start, end) => d >= start && d <= end;
+
+    let currentTotal = 0;
+    let prevTotal = 0;
+    items.forEach((item) => {
+      const d = safeDate(item[dateKey]);
+      if (!d) return;
+      if (inWindow(d, startCurrent, endCurrent)) currentTotal += valueFn(item);
+      else if (inWindow(d, startPrev, endPrev)) prevTotal += valueFn(item);
+    });
+    return { currentTotal, prevTotal };
+  }
+
+  if (range === "yearly") {
+    const currentYear = now.getFullYear();
+    const prevYear = currentYear - 1;
+    let currentTotal = 0;
+    let prevTotal = 0;
+    items.forEach((item) => {
+      const d = safeDate(item[dateKey]);
+      if (!d) return;
+      if (d.getFullYear() === currentYear) currentTotal += valueFn(item);
+      else if (d.getFullYear() === prevYear) prevTotal += valueFn(item);
+    });
+    return { currentTotal, prevTotal };
+  }
+
+  // default monthly
+  return monthlyAggregate(items, dateKey, valueFn);
+}
+
+function filterByRange(items, dateKey, range = selectedRange) {
+  const now = new Date();
+  const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+  return items.filter((item) => {
+    const d = safeDate(item[dateKey]);
+    if (!d) return false;
+
+    if (range === "weekly") {
+      const diffMs = startOfToday - new Date(d.getFullYear(), d.getMonth(), d.getDate());
+      const diffDays = diffMs / (1000 * 60 * 60 * 24);
+      return diffDays >= 0 && diffDays < 7;
+    }
+
+    if (range === "monthly") {
+      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+    }
+
+    if (range === "yearly") {
+      return d.getFullYear() === now.getFullYear();
+    }
+
+    return true;
+  });
+}
 
   function createEnhancedMetricCard(config, value) {
+    const trend = arguments.length > 2 ? arguments[2] : null;
+    const numericValue = Number(value || 0);
+    const formattedValue = config.suffix
+      ? `${numericValue.toLocaleString(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        })}${config.suffix}`
+      : numericValue.toLocaleString();
+
+    const trendClass =
+      typeof trend === "number"
+        ? trend === 0
+          ? ""
+          : trend > 0
+          ? "trend-up"
+          : "trend-down"
+        : "muted";
+    const trendLabel =
+      typeof trend === "number"
+        ? `${trend > 0 ? "↑" : trend < 0 ? "↓" : ""} ${Math.abs(trend).toFixed(
+            1
+          )}%`
+        : "—";
+
     const card = document.createElement("div");
-    card.className = "enhanced-metric-card";
-    card.style.borderLeftColor = config.color;
+    card.className = "enhanced-metric-card card";
+    card.style.borderLeft = `4px solid ${config.color}`;
 
     card.innerHTML = `
       <div class="metric-icon" style="color: ${config.color}">
         <i class="fa ${config.icon}"></i>
       </div>
       <div class="metric-label">${config.label}</div>
-      <div class="metric-value" style="color: ${config.color}">
-        ${value}${config.suffix || ""}
+      <div class="metric-value">
+        ${formattedValue}
       </div>
+      <div class="metric-trend ${trendClass}">
+        ${trendLabel}
+      </div>
+      <button class="ghost-btn small" ${
+        config.link ? "" : 'disabled aria-disabled="true"'
+      }>View report</button>
     `;
+
+    if (config.link) {
+      const btn = card.querySelector(".ghost-btn.small");
+      btn.addEventListener("click", () => {
+        window.location.href = config.link;
+      });
+    }
 
     return card;
   }
 
-  function updateDashboard(
-    patientsData,
-    receptionData,
-    expensesData,
-    suppliesData,
-    labosData
-  ) {
-    const dashboard = document.getElementById("dashboard");
-    dashboard.innerHTML = "";
-    dashboard.style.display = "grid";
-    dashboard.style.gridTemplateColumns =
-      "repeat(auto-fit, minmax(220px, 1fr))";
-    dashboard.style.gap = "20px";
+function renderMetrics() {
+  const dashboard = document.getElementById("dashboard");
+  if (!dashboard) return;
+  dashboard.innerHTML = "";
 
-    const patients = patientsData ? Object.values(patientsData) : [];
-    const reception = receptionData ? Object.values(receptionData) : [];
-    const expenses = expensesData ? Object.values(expensesData) : [];
-    const supplies = suppliesData ? Object.values(suppliesData) : [];
-    const labos = labosData ? Object.values(labosData) : [];
+  const patients = Object.values(state.patients || {});
+  const appointments = Object.values(state.appointments || {});
+  const labos = Object.values(state.labos || {});
 
-    const totalPatients = patients.length;
-    const waitingPatients = reception.length;
-    const totalPrice = patients.reduce(
-      (sum, p) => sum + (Number(p.price) || 0),
-      0
-    );
-    const totalAdvance = patients.reduce(
-      (sum, p) => sum + (Number(p.advance) || 0),
-      0
-    );
-    const totalExpense = expenses.reduce(
-      (sum, item) => sum + (Number(item.amount) || 0),
-      0
-    );
-    const totalMedicalCost = supplies.reduce(
-      (sum, item) => sum + item.quantity * item.unitPrice,
-      0
-    );
-    const totalLaboExpense = labos.reduce(
-      (sum, l) => sum + (Number(l.price) || 0),
-      0
-    );
-    const pendingLabos = labos.filter(
-      (l) => l.status.toLowerCase() !== "completed"
-    ).length;
-    const netProfit =
-      totalPrice - totalMedicalCost - totalExpense - totalLaboExpense;
-    const cashInHand =
-      totalAdvance - totalMedicalCost - totalExpense - totalLaboExpense;
+  const patientsInRange = filterByRange(patients, "date");
+  const appointmentsInRange = filterByRange(appointments, "date");
+  const labosInRange = filterByRange(labos, "date");
 
-    const values = {
-      totalPatients,
-      waitingPatients,
-      totalPrice: totalPrice.toFixed(2),
-      totalAdvance: totalAdvance.toFixed(2),
-      monthlyExpense: totalExpense.toFixed(2),
-      medicalInventoryCost: totalMedicalCost.toFixed(2),
-      monthlyLaboExpense: totalLaboExpense.toFixed(2),
-      laboWorkLeft: pendingLabos,
-      netProfit: netProfit.toFixed(2),
-      caseAmount: cashInHand.toFixed(2),
-    };
+  const totalAdvance = patients.reduce(
+    (sum, p) => sum + (Number(p.advance) || 0),
+    0
+  );
 
-    metricConfigs.forEach((config) => {
-      const card = createEnhancedMetricCard(config, values[config.id]);
-      dashboard.appendChild(card);
+  // Trends compare current vs previous for the selected range.
+  const patientsAgg = rangeTotals(patients, "date", () => 1);
+  const appointmentsAgg = rangeTotals(appointments, "date", () => 1);
+  const labAgg = rangeTotals(labos, "date", () => 1);
+  const paymentsAgg = rangeTotals(
+    patients,
+    "date",
+    (p) => Number(p.advance) || 0
+  );
+
+  const trends = {
+    totalPatients: computeTrend(
+      patientsAgg.currentTotal,
+      patientsAgg.prevTotal
+    ),
+    appointments: computeTrend(
+      appointmentsAgg.currentTotal,
+      appointmentsAgg.prevTotal
+    ),
+    labWork: computeTrend(labAgg.currentTotal, labAgg.prevTotal),
+    payments: computeTrend(
+      paymentsAgg.currentTotal,
+      paymentsAgg.prevTotal
+    ),
+  };
+
+  const values = {
+    totalPatients: patientsInRange.length,
+    appointments: appointmentsInRange.length,
+    labWork: labosInRange.length,
+    payments: totalAdvance.toFixed(2),
+  };
+
+  metricConfigs.forEach((config) => {
+    const card = createEnhancedMetricCard(
+      config,
+      values[config.id] || 0,
+      trends[config.id]
+    );
+    dashboard.appendChild(card);
+  });
+
+  markDataLoaded();
+}
+
+function updateCharts() {
+  const patients = Object.values(state.patients || {});
+  const filteredPatients = filterByRange(patients, "date");
+  const basePatients =
+    selectedRange === "monthly" || selectedRange === "yearly"
+      ? patients
+      : filteredPatients;
+
+  // Revenue chart adapts by range
+  let labels = [];
+  let revenues = [];
+  if (selectedRange === "weekly") {
+    const days = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date();
+      d.setDate(d.getDate() - i);
+      days.push(d);
+    }
+    labels = days.map((d) =>
+      d.toLocaleDateString("en-US", { weekday: "short" })
+    );
+    revenues = days.map((day) => {
+      const dateStr = day.toISOString().split("T")[0];
+      return filteredPatients
+        .filter((p) => p.date === dateStr)
+        .reduce((sum, p) => sum + (Number(p.price) || 0), 0);
     });
-
-    // Update charts
-    updateCharts(patients);
-  }
-
-  function updateCharts(patients) {
-    // Monthly Revenue Chart
+  } else {
     const monthlyData = {};
-    patients.forEach((p) => {
+    const source =
+      selectedRange === "monthly"
+        ? filterByRange(patients, "date", "yearly") // current year only
+        : patients.filter((p) => {
+            const d = safeDate(p.date);
+            return d && d.getFullYear() === new Date().getFullYear();
+          });
+
+    source.forEach((p) => {
       if (p.date) {
-        const month = new Date(p.date).toLocaleString("default", {
-          month: "short",
-        });
-        monthlyData[month] = (monthlyData[month] || 0) + (Number(p.price) || 0);
+        const d = safeDate(p.date);
+        if (!d) return;
+        const label =
+          selectedRange === "yearly"
+            ? d.getFullYear().toString()
+            : d.toLocaleString("default", { month: "short" });
+        monthlyData[label] =
+          (monthlyData[label] || 0) + (Number(p.price) || 0);
       }
     });
+    labels = Object.keys(monthlyData);
+    revenues = Object.values(monthlyData);
+  }
 
-    const months = Object.keys(monthlyData);
-    const revenues = Object.values(monthlyData);
+  if (revenueChart) revenueChart.destroy();
 
-    if (revenueChart) revenueChart.destroy();
+  const ctx1 = document.getElementById("revenueChart").getContext("2d");
+  revenueChart = new Chart(ctx1, {
+    type: "line",
+    data: {
+      labels,
+      datasets: [
+        {
+          label: "Revenue (MAD)",
+          data: revenues,
+          borderColor: "#1d7bff",
+          backgroundColor: "rgba(29, 123, 255, 0.15)",
+          tension: 0.4,
+          fill: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { display: true },
+      },
+      scales: {
+        y: { beginAtZero: true },
+      },
+    },
+  });
 
-    const ctx1 = document.getElementById("revenueChart").getContext("2d");
-    revenueChart = new Chart(ctx1, {
-      type: "line",
+  // Work Type Distribution Chart (filtered by range)
+  const workTypes = {};
+  filteredPatients.forEach((p) => {
+    if (p.work) {
+      workTypes[p.work] = (workTypes[p.work] || 0) + 1;
+    }
+  });
+
+  if (workTypeChart) workTypeChart.destroy();
+
+  const ctx2 = document.getElementById("workTypeChart").getContext("2d");
+  workTypeChart = new Chart(ctx2, {
+    type: "doughnut",
+    data: {
+      labels: Object.keys(workTypes),
+      datasets: [
+        {
+          data: Object.values(workTypes),
+          backgroundColor: [
+            "#1d7bff",
+            "#e74c3c",
+            "#f39c12",
+            "#27ae60",
+            "#9b59b6",
+            "#1abc9c",
+            "#34495e",
+            "#e67e22",
+            "#16a085",
+            "#c0392b",
+            "#2980b9",
+            "#8e44ad",
+          ],
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: true,
+      plugins: {
+        legend: { position: "right" },
+      },
+    },
+  });
+
+  // Bar Chart: Net Profit (advance) vs Revenue (price)
+  const barMonthly = {};
+  basePatients.forEach((p) => {
+    const d = safeDate(p.date);
+    if (!d) return;
+    const label =
+      selectedRange === "yearly"
+        ? d.getFullYear().toString()
+        : d.toLocaleString("default", { month: "short" });
+    const revenue = Number(p.price) || 0;
+    const net = Number(p.advance) || 0;
+    if (!barMonthly[label]) barMonthly[label] = { revenue: 0, net: 0 };
+    barMonthly[label].revenue += revenue;
+    barMonthly[label].net += net;
+  });
+
+  const barCanvas = document.getElementById("barChart");
+  if (barChart) barChart.destroy();
+  if (barCanvas) {
+    const ctx3 = barCanvas.getContext("2d");
+    barChart = new Chart(ctx3, {
+      type: "bar",
       data: {
-        labels: months,
+        labels: Object.keys(barMonthly),
         datasets: [
           {
-            label: "Revenue (MAD)",
-            data: revenues,
-            borderColor: "#3498db",
-            backgroundColor: "rgba(52, 152, 219, 0.1)",
-            tension: 0.4,
-            fill: true,
+            label: "Net Profit",
+            data: Object.values(barMonthly).map((v) => v.net),
+            backgroundColor: "#1d7bff",
+          },
+          {
+            label: "Revenue",
+            data: Object.values(barMonthly).map((v) => v.revenue),
+            backgroundColor: "#27ae60",
           },
         ],
       },
@@ -254,324 +458,338 @@ firebase.auth().onAuthStateChanged((user) => {
         },
         scales: {
           y: { beginAtZero: true },
-        },
-      },
-    });
-
-    // Work Type Distribution Chart
-    const workTypes = {};
-    patients.forEach((p) => {
-      if (p.work) {
-        workTypes[p.work] = (workTypes[p.work] || 0) + 1;
-      }
-    });
-
-    if (workTypeChart) workTypeChart.destroy();
-
-    const ctx2 = document.getElementById("workTypeChart").getContext("2d");
-    workTypeChart = new Chart(ctx2, {
-      type: "doughnut",
-      data: {
-        labels: Object.keys(workTypes),
-        datasets: [
-          {
-            data: Object.values(workTypes),
-            backgroundColor: [
-              "#3498db",
-              "#e74c3c",
-              "#f39c12",
-              "#27ae60",
-              "#9b59b6",
-              "#1abc9c",
-              "#34495e",
-              "#e67e22",
-              "#16a085",
-              "#c0392b",
-              "#2980b9",
-              "#8e44ad",
-            ],
-          },
-        ],
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: true,
-        plugins: {
-          legend: { position: "right" },
+          x: { ticks: { autoSkip: true, maxTicksLimit: 10 } },
         },
       },
     });
   }
+}
 
-  const logoutBtn = document.getElementById("logoutBtn");
-  if (logoutBtn) {
-    logoutBtn.addEventListener("click", () => {
-      firebase
-        .auth()
-        .signOut()
-        .then(() => {
-          window.location.href = "index.html";
-        })
-        .catch((error) => {
-          console.error("Logout failed:", error);
-        });
-    });
+function renderNextPatientCard() {
+  const target = document.getElementById("nextPatientCard");
+  if (!target) return;
+  const patients = Object.values(state.patients || {});
+  if (!patients.length) {
+    target.innerHTML =
+      "<h3>Next Patient Details</h3><p class='muted'>No patients yet.</p>";
+    return;
   }
 
-  // Setup realtime listeners for all relevant data nodes
-  patientsRef.on("value", (patientsSnap) => {
-    const patientsData = patientsSnap.val();
+  const withDate = patients
+    .filter((p) => p.nextVisit)
+    .sort(
+      (a, b) => new Date(a.nextVisit).getTime() - new Date(b.nextVisit).getTime()
+    );
+  const next = withDate[0] || patients[0];
 
-    receptionRef.once("value", (receptionSnap) => {
-      const receptionData = receptionSnap.val();
-
-      expensesRef.once("value", (expensesSnap) => {
-        const expensesData = expensesSnap.val();
-
-        suppliesRef.once("value", (suppliesSnap) => {
-          const suppliesData = suppliesSnap.val();
-
-          labosRef.once("value", (labosSnap) => {
-            const labosData = labosSnap.val();
-
-            updateDashboard(
-              patientsData,
-              receptionData,
-              expensesData,
-              suppliesData,
-              labosData
-            );
-          });
-        });
-      });
-    });
-  });
-});
-
-const db = firebase.database();
-
-const patientsRef = db.ref("patients/" + uid);
-const receptionRef = db.ref("waitingList/" + uid);
-const expensesRef = db.ref("fixedExpenses/" + uid);
-const suppliesRef = db.ref("medicalSupplies/" + uid);
-const labosRef = db.ref("labos/" + uid);
-
-function updateDashboard(patientsData, receptionData) {
-  const patients = patientsData ? Object.values(patientsData) : [];
-  const reception = receptionData ? Object.values(receptionData) : [];
-
-  const totalPatients = patients.length;
-  const waitingPatients = reception.length;
-
-  const dashboard = document.getElementById("dashboard");
-  dashboard.innerHTML = `
-    <div class="metric-card">
-      <h3>Total Patients</h3>
-      <p>${totalPatients}</p>
+  target.innerHTML = `
+    <h3>Next Patient Details</h3>
+    <p class="muted">${next.work || "Treatment"}</p>
+    <div class="profile-chip">
+      <div class="avatar">${(next.name || "?").charAt(0).toUpperCase()}</div>
+      <div>
+        <strong>${next.name || "Unnamed Patient"}</strong>
+        <div class="muted">${next.phone || "No phone"}</div>
+      </div>
     </div>
-    <div class="metric-card">
-      <h3>Reception</h3>
-      <p>${waitingPatients}</p>
+    <div class="mini-grid">
+      <div><p class="eyebrow">Next Visit</p><strong>${
+        next.nextVisit || "TBD"
+      }</strong></div>
+      <div><p class="eyebrow">Status</p><strong>${
+        next.status || "In Progress"
+      }</strong></div>
     </div>
   `;
 }
 
-function updateTotalAdvance(patientsData) {
-  const patients = patientsData ? Object.values(patientsData) : [];
-  const totalAdvance = patients.reduce(
+function renderApprovalCard() {
+  const target = document.getElementById("approvalCard");
+  if (!target) return;
+  const reception = Object.values(state.reception || {});
+  target.innerHTML = `<h3>Approval Requests</h3>`;
+
+  if (!reception.length) {
+    target.innerHTML += `<p class="muted">No pending approvals.</p>`;
+    return;
+  }
+
+  const list = document.createElement("div");
+  list.className = "stacked-list";
+  reception.slice(0, 4).forEach((item) => {
+    const row = document.createElement("div");
+    row.className = "stacked-row";
+    row.innerHTML = `
+      <div>
+        <strong>${item.name || "Patient"}</strong>
+        <p class="muted">${item.work || ""}</p>
+      </div>
+      <div class="chip chip-scheduled">Awaiting</div>
+    `;
+    list.appendChild(row);
+  });
+  target.appendChild(list);
+}
+
+function renderTodayAppointments() {
+  const target = document.getElementById("todayAppointmentsCard");
+  if (!target) return;
+  const today = new Date().toISOString().split("T")[0];
+  const todayApps = Object.entries(state.appointments || {})
+    .map(([key, val]) => ({ key, ...val }))
+    .filter((a) => a.date === today);
+
+  target.innerHTML = `<h3>Today's Appointments</h3>`;
+
+  if (!todayApps.length) {
+    target.innerHTML += `<p class="muted">No appointments scheduled today.</p>`;
+    return;
+  }
+
+  const list = document.createElement("div");
+  list.className = "stacked-list";
+  todayApps.forEach((app) => {
+    const row = document.createElement("div");
+    row.className = "stacked-row";
+    row.innerHTML = `
+      <div>
+        <strong>${app.patientName}</strong>
+        <p class="muted">${app.time} • ${app.notes || "No notes"}</p>
+      </div>
+      <span class="status-badge info">${app.status}</span>
+    `;
+    list.appendChild(row);
+  });
+  target.appendChild(list);
+}
+
+function renderSuccessStats() {
+  const target = document.getElementById("successStatsCard");
+  if (!target) return;
+  const appointments = filterByRange(
+    Object.values(state.appointments || {}),
+    "date"
+  );
+  const completed = appointments.filter((a) => a.status === "Completed").length;
+  const rate =
+    appointments.length === 0
+      ? 0
+      : Math.round((completed / appointments.length) * 100);
+
+  // Compare completion rate current vs previous period for selected range
+  const rateForSet = (set) => {
+    if (!set.length) return 0;
+    return Math.round(
+      (set.filter((a) => a.status === "Completed").length / set.length) * 100
+    );
+  };
+
+  const now = new Date();
+  let currentSet = appointments;
+  let prevSet = [];
+
+  if (selectedRange === "weekly") {
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startCurrent = new Date(today);
+    startCurrent.setDate(startCurrent.getDate() - 6);
+    const endCurrent = today;
+
+    const startPrev = new Date(startCurrent);
+    startPrev.setDate(startPrev.getDate() - 7);
+    const endPrev = new Date(startCurrent);
+    endPrev.setDate(endPrev.getDate() - 1);
+
+    const inWindow = (d, start, end) => d >= start && d <= end;
+    currentSet = appointments.filter((a) => {
+      const d = safeDate(a.date);
+      return d && inWindow(d, startCurrent, endCurrent);
+    });
+    prevSet = appointments.filter((a) => {
+      const d = safeDate(a.date);
+      return d && inWindow(d, startPrev, endPrev);
+    });
+  } else if (selectedRange === "yearly") {
+    const currentYear = now.getFullYear();
+    const prevYear = currentYear - 1;
+    currentSet = appointments.filter((a) => {
+      const d = safeDate(a.date);
+      return d && d.getFullYear() === currentYear;
+    });
+    prevSet = appointments.filter((a) => {
+      const d = safeDate(a.date);
+      return d && d.getFullYear() === prevYear;
+    });
+  } else {
+    // monthly default
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
+    const prevMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+    const prevYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+    currentSet = appointments.filter((a) => {
+      const d = safeDate(a.date);
+      return d && d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+    });
+    prevSet = appointments.filter((a) => {
+      const d = safeDate(a.date);
+      return d && d.getMonth() === prevMonth && d.getFullYear() === prevYear;
+    });
+  }
+
+  const currentRate = rateForSet(currentSet);
+  const prevRate = prevSet.length ? rateForSet(prevSet) : null;
+
+  const rateTrend =
+    prevRate === null || prevRate === 0
+      ? null
+      : ((currentRate - prevRate) / prevRate) * 100;
+
+  const trendLabel =
+    typeof rateTrend === "number"
+      ? `${rateTrend > 0 ? "↑" : "↓"} ${Math.abs(rateTrend).toFixed(1)}%`
+      : "—";
+
+  target.innerHTML = `
+    <h3>Success Stats</h3>
+    <div class="status-header">
+      <span class="status-emoji">😊</span>
+      <div>
+        <div class="big-number">${currentRate}%</div>
+        <span class="chip chip-scheduled">${trendLabel}</span>
+      </div>
+    </div>
+    <p class="muted">Completion rate based on appointments</p>
+  `;
+}
+
+function renderCounts() {
+  const patients = Object.values(state.patients || {});
+  const appointments = Object.values(state.appointments || {});
+  const targetPatients = document.getElementById("patientsThisMonthCard");
+  const targetEarnings = document.getElementById("earningsCard");
+  const now = new Date();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  const patientsThisMonth = patients.filter((p) => {
+    if (!p.date) return false;
+    const d = new Date(p.date);
+    return d.getMonth() === currentMonth && d.getFullYear() === currentYear;
+  }).length;
+
+  const earnings = patients.reduce(
     (sum, p) => sum + (Number(p.advance) || 0),
     0
   );
 
-  let advanceElement = document.getElementById("totalAdvance");
-  if (advanceElement) {
-    advanceElement.textContent = `${totalAdvance.toFixed(2)} MAD`;
-  } else {
-    const card = document.createElement("div");
-    card.className = "metric-card";
-    card.innerHTML = `
-      <h3>Total Advance</h3>
-      <p id="totalAdvance">${totalAdvance.toFixed(2)} MAD</p>
+  if (targetPatients) {
+    targetPatients.innerHTML = `
+      <h3>Total Patients This Month</h3>
+      <div class="big-number">${patientsThisMonth}</div>
     `;
-    document.getElementById("dashboard").appendChild(card);
+  }
+
+  if (targetEarnings) {
+    targetEarnings.innerHTML = `
+      <h3>Earning</h3>
+      <div class="big-number">$${earnings.toFixed(2)}</div>
+      <p class="muted">This month so far</p>
+    `;
   }
 }
 
-function updateTotalPrice(patientsData) {
-  const patients = patientsData ? Object.values(patientsData) : [];
-  const totalPrice = patients.reduce(
-    (sum, p) => sum + (Number(p.price) || 0),
-    0
-  );
+function refreshDashboard() {
+  renderMetrics();
+  updateCharts();
+  renderNextPatientCard();
+  renderApprovalCard();
+  renderTodayAppointments();
+  renderSuccessStats();
+  renderCounts();
+}
 
-  let priceElement = document.getElementById("totalPrice");
-  if (priceElement) {
-    priceElement.textContent = `${totalPrice.toFixed(2)} MAD`;
-  } else {
-    const card = document.createElement("div");
-    card.className = "metric-card";
-    card.innerHTML = `
-      <h3>Total Price</h3>
-      <p id="totalPrice">${totalPrice.toFixed(2)} MAD</p>
-    `;
-    document.getElementById("dashboard").appendChild(card);
+function updateWelcome(profile) {
+  const name = profile?.name || "Doctor";
+  const welcome = document.getElementById("dashboardWelcome");
+  if (welcome) {
+    welcome.textContent = `Welcome Back, ${name}!`;
   }
 }
 
-// Similarly for other dashboard items...
-function updateMonthlyExpense(expensesData) {
-  const expenses = expensesData ? Object.values(expensesData) : [];
-  const totalExpense = expenses.reduce(
-    (sum, item) => sum + (Number(item.amount) || 0),
-    0
-  );
+function setupTimeframeSwitch() {
+  const switcher = document.getElementById("timeframeSwitch");
+  if (!switcher) return;
+  switcher.addEventListener("click", (e) => {
+    const btn = e.target.closest(".pill-btn");
+    if (!btn) return;
+    switcher.querySelectorAll(".pill-btn").forEach((b) =>
+      b.classList.remove("active")
+    );
+    btn.classList.add("active");
+    selectedRange = btn.dataset.range || "monthly";
+    refreshDashboard();
+  });
+}
 
-  let expenseElement = document.getElementById("monthlyExpense");
-  if (expenseElement) {
-    expenseElement.textContent = `${totalExpense.toFixed(2)} MAD`;
-  } else {
-    const card = document.createElement("div");
-    card.className = "metric-card";
-    card.innerHTML = `
-      <h3>Monthly Expense</h3>
-      <p id="monthlyExpense">${totalExpense.toFixed(2)} MAD</p>
-    `;
-    document.getElementById("dashboard").appendChild(card);
+function initDateLabel() {
+  const now = new Date();
+  const dateElement = document.getElementById("dashboardDate");
+  if (dateElement) {
+    dateElement.textContent = now.toLocaleDateString("en-US", {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
   }
 }
 
-function updateMedicalInventoryCost(suppliesData) {
-  const supplies = suppliesData ? Object.values(suppliesData) : [];
-  const totalCost = supplies.reduce(
-    (sum, item) => sum + item.quantity * item.unitPrice,
-    0
-  );
+function bootstrapRealtime(db, uid) {
+  const patientsRef = db.ref("patients/" + uid);
+  const receptionRef = db.ref("waitingList/" + uid);
+  const expensesRef = db.ref("fixedExpenses/" + uid);
+  const suppliesRef = db.ref("medicalSupplies/" + uid);
+  const labosRef = db.ref("labos/" + uid);
+  const appointmentsRef = db.ref("appointments/" + uid);
+  const profileRef = db.ref("profiles/" + uid);
 
-  let element = document.getElementById("medicalInventoryCost");
-  if (element) {
-    element.textContent = `${totalCost.toFixed(2)} MAD`;
-  } else {
-    const card = document.createElement("div");
-    card.className = "metric-card";
-    card.innerHTML = `
-      <h3>Medical Supplies Cost</h3>
-      <p id="medicalInventoryCost">${totalCost.toFixed(2)} MAD</p>
-    `;
-    document.getElementById("dashboard").appendChild(card);
-  }
-}
-
-function updateMonthlyLaboExpense(labosData) {
-  const labos = labosData ? Object.values(labosData) : [];
-  const total = labos.reduce((sum, l) => sum + (Number(l.price) || 0), 0);
-
-  let laboElement = document.getElementById("monthlyLaboExpense");
-  if (laboElement) {
-    laboElement.textContent = `${total.toFixed(2)} MAD`;
-  } else {
-    const card = document.createElement("div");
-    card.className = "metric-card";
-    card.innerHTML = `
-      <h3>Monthly Labo Expense</h3>
-      <p id="monthlyLaboExpense">${total.toFixed(2)} MAD</p>
-    `;
-    document.getElementById("dashboard").appendChild(card);
-  }
-}
-
-function updateLaboWorkLeft(labosData) {
-  const labos = labosData ? Object.values(labosData) : [];
-  const pendingLabos = labos.filter(
-    (l) => l.status.toLowerCase() !== "completed"
-  ).length;
-
-  let laboWorkElement = document.getElementById("laboWorkLeft");
-  if (laboWorkElement) {
-    laboWorkElement.textContent = `${pendingLabos} labos`;
-  } else {
-    const card = document.createElement("div");
-    card.className = "metric-card";
-    card.innerHTML = `
-      <h3>Labo Work Left</h3>
-      <p id="laboWorkLeft">${pendingLabos} labos</p>
-    `;
-    document.getElementById("dashboard").appendChild(card);
-  }
-}
-
-function updateFinancialSummary(
-  patientsData,
-  suppliesData,
-  expensesData,
-  labosData
-) {
-  const patients = patientsData ? Object.values(patientsData) : [];
-  const supplies = suppliesData ? Object.values(suppliesData) : [];
-  const expenses = expensesData ? Object.values(expensesData) : [];
-  const labos = labosData ? Object.values(labosData) : [];
-
-  const totalPrice = patients.reduce(
-    (sum, p) => sum + (Number(p.price) || 0),
-    0
-  );
-  const totalAdvance = patients.reduce(
-    (sum, p) => sum + (Number(p.advance) || 0),
-    0
-  );
-  const totalMedicalCost = supplies.reduce(
-    (sum, s) => sum + s.quantity * s.unitPrice,
-    0
-  );
-  const totalMonthlyExpense = expenses.reduce(
-    (sum, e) => sum + (Number(e.amount) || 0),
-    0
-  );
-  const totalLaboExpense = labos.reduce(
-    (sum, l) => sum + (Number(l.price) || 0),
-    0
-  );
-
-  const netProfit =
-    totalPrice - totalMedicalCost - totalMonthlyExpense - totalLaboExpense;
-  const cashInHand =
-    totalAdvance - totalMedicalCost - totalMonthlyExpense - totalLaboExpense;
-
-  let netProfitElement = document.getElementById("netProfit");
-  if (netProfitElement) {
-    netProfitElement.textContent = `${netProfit.toFixed(2)} MAD`;
-  } else {
-    const card = document.createElement("div");
-    card.className = "metric-card";
-    card.innerHTML = `
-      <h3>Net Profit</h3>
-      <p id="netProfit">${netProfit.toFixed(2)} MAD</p>
-    `;
-    document.getElementById("dashboard").appendChild(card);
-  }
-
-  let cashElement = document.getElementById("caseAmount");
-  if (cashElement) {
-    cashElement.textContent = `${cashInHand.toFixed(2)} MAD`;
-  } else {
-    const card = document.createElement("div");
-    card.className = "metric-card";
-    card.innerHTML = `
-      <h3>Cash In Hand</h3>
-      <p id="caseAmount">${cashInHand.toFixed(2)} MAD</p>
-    `;
-    document.getElementById("dashboard").appendChild(card);
-  }
+  patientsRef.on("value", (snap) => {
+    state.patients = snap.val() || {};
+    refreshDashboard();
+  });
+  receptionRef.on("value", (snap) => {
+    state.reception = snap.val() || {};
+    refreshDashboard();
+  });
+  expensesRef.on("value", (snap) => {
+    state.expenses = snap.val() || {};
+    refreshDashboard();
+  });
+  suppliesRef.on("value", (snap) => {
+    state.supplies = snap.val() || {};
+    refreshDashboard();
+  });
+  labosRef.on("value", (snap) => {
+    state.labos = snap.val() || {};
+    refreshDashboard();
+  });
+  appointmentsRef.on("value", (snap) => {
+    state.appointments = snap.val() || {};
+    refreshDashboard();
+  });
+  profileRef.on("value", (snap) => {
+    state.profile = snap.val() || {};
+    updateWelcome(state.profile);
+  });
 }
 
 const logoutBtn = document.getElementById("logoutBtn");
-
 if (logoutBtn) {
   logoutBtn.addEventListener("click", () => {
     firebase
       .auth()
       .signOut()
       .then(() => {
-        window.location.href = "index.html"; // Adjust if your login page has a different name
+        window.location.href = "index.html";
       })
       .catch((error) => {
         console.error("Logout failed:", error);
@@ -579,38 +797,16 @@ if (logoutBtn) {
   });
 }
 
-// Setup realtime listeners for all relevant data nodes
-patientsRef.on("value", (patientsSnap) => {
-  const patientsData = patientsSnap.val();
+firebase.auth().onAuthStateChanged((user) => {
+  if (!user) {
+    window.location.href = "index.html";
+    return;
+  }
 
-  receptionRef.once("value", (receptionSnap) => {
-    const receptionData = receptionSnap.val();
-    updateDashboard(patientsData, receptionData);
-    updateTotalAdvance(patientsData);
-    updateTotalPrice(patientsData);
-  });
-
-  expensesRef.once("value", (expensesSnap) => {
-    const expensesData = expensesSnap.val();
-
-    suppliesRef.once("value", (suppliesSnap) => {
-      const suppliesData = suppliesSnap.val();
-
-      labosRef.once("value", (labosSnap) => {
-        const labosData = labosSnap.val();
-
-        // ✅ Add this line to show profit and cash in hand
-        updateFinancialSummary(
-          patientsData,
-          suppliesData,
-          expensesData,
-          labosData
-        );
-
-        updateMonthlyExpense(expensesData);
-        updateMedicalInventoryCost(suppliesData);
-        updateMonthlyLaboExpense(labosData);
-      });
-    });
-  });
+  uid = user.uid;
+  localStorage.setItem("uid", uid);
+  const db = firebase.database();
+  initDateLabel();
+  setupTimeframeSwitch();
+  bootstrapRealtime(db, uid);
 });

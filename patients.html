@@ -58,7 +58,13 @@
         <button id="exportBtn" class="export-btn">📥 Export to CSV</button>
       </div>
 
-      <form id="patientForm">
+      <div class="action-group" style="margin-bottom: 10px">
+        <button class="primary-btn" data-toggle-target="patientForm">
+          + Add Patient
+        </button>
+      </div>
+
+      <form id="patientForm" class="hidden card collapsible">
         <input type="text" id="patientName" placeholder="Name" required>
         <input type="text" id="patientPhone" placeholder="Phone" required>
         <select id="patientWork" aria-label="Type of work" required>
@@ -80,7 +86,12 @@
         <input type="number" id="patientPrice" placeholder="Price" required />
         <input type="number" id="patientAdvance" placeholder="Advance" required />
         <input type="date" id="patientDate" title="Date" required />
-        <button type="submit">Add Patient</button>
+        <div class="form-actions">
+          <button type="submit" class="primary-btn">Add Patient</button>
+          <button type="button" class="ghost-btn" data-toggle-target="patientForm">
+            Cancel
+          </button>
+        </div>
       </form>
       <table id="patientTable">
         <thead><tr><th>Name</th><th>Phone</th><th>Work</th><th>Status</th><th>Note</th><th>First Visit</th><th>Next Pay</th><th>Price</th><th>Advance</th><th>Remaining</th><th>Date</th><th>Actions</th> </tr></thead>
