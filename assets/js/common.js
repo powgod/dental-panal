@@ -150,15 +150,21 @@ document.addEventListener("DOMContentLoaded", function () {
           .once("value")
           .then((snap) => {
             const profile = snap.val() || {};
-            chip.querySelector(".avatar").textContent = (
-              profile.name || user.email || "?"
-            )
+            const displayName = profile.name || user.email || "?";
+            const emailText = profile.email || user.email || "";
+
+            chip.querySelector(".avatar").textContent = displayName
               .charAt(0)
               .toUpperCase();
             chip.querySelector("strong").textContent =
-              profile.name || user.email || "Profile";
-            chip.querySelector(".muted").textContent =
-              profile.specialization || profile.phone || "Active";
+              displayName || "Profile";
+
+            const muted = chip.querySelector(".muted");
+            muted.textContent = emailText || "Active";
+            if (emailText) {
+              muted.setAttribute("title", emailText);
+              muted.classList.add("profile-email");
+            }
           });
       }
     });

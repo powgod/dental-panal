@@ -9,6 +9,7 @@ const appointmentsTableBody = document.querySelector(
 );
 const startDateInput = document.getElementById("startDate");
 const endDateInput = document.getElementById("endDate");
+const statusFilterInput = document.getElementById("statusFilter");
 const clearFilterBtn = document.getElementById("clearFilterBtn");
 const appointmentFormCard = document.getElementById("appointmentFormCard");
 const appointmentFormTitle = document.getElementById("appointmentFormTitle");
@@ -201,7 +202,7 @@ function hideAppointmentForm() {
   appointmentFormCard?.classList.add("hidden");
 }
 
-function renderAppointments(startDate = null, endDate = null) {
+function renderAppointments(startDate = null, endDate = null, statusFilter = null) {
   appointmentsTableBody.innerHTML = "";
 
   const appsArray = Object.entries(appointments)
@@ -225,6 +226,11 @@ function renderAppointments(startDate = null, endDate = null) {
     filtered = appsArray.filter((app) => app.date <= endDate);
   }
 
+  // Apply status filter
+  if (statusFilter) {
+    filtered = filtered.filter((app) => app.status === statusFilter);
+  }
+
   if (filtered.length === 0) {
     appointmentsTableBody.innerHTML = `<tr><td colspan="7">No appointments found.</td></tr>`;
     return;
@@ -238,6 +244,12 @@ function renderAppointments(startDate = null, endDate = null) {
   });
 
   filtered.forEach((app) => {
+    const rowClass =
+      app.status === "Completed"
+        ? "row-status-finished"
+        : app.status === "Cancelled"
+        ? "row-status-labo"
+        : "";
     const statusClass =
       app.status === "Completed"
         ? "status-badge success"
@@ -245,7 +257,7 @@ function renderAppointments(startDate = null, endDate = null) {
         ? "status-badge danger"
         : "status-badge info";
     appointmentsTableBody.innerHTML += `
-        <tr>
+        <tr class="${rowClass}">
           <td>${app.patientName}</td>
           <td>${app.date}</td>
           <td>${app.time}</td>
@@ -348,12 +360,14 @@ window.deleteAppointment = function (key) {
 function applyDateFilter() {
   const startDate = startDateInput.value || null;
   const endDate = endDateInput.value || null;
-  renderAppointments(startDate, endDate);
+  const statusValue = statusFilterInput ? statusFilterInput.value : null;
+  renderAppointments(startDate, endDate, statusValue);
   syncCalendar();
 }
 
 startDateInput.addEventListener("change", applyDateFilter);
 endDateInput.addEventListener("change", applyDateFilter);
+statusFilterInput?.addEventListener("change", applyDateFilter);
 
 clearFilterBtn.addEventListener("click", () => {
   startDateInput.value = "";

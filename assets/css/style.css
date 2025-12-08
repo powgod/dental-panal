@@ -443,6 +443,13 @@ body {
   color: #e74c3c;
 }
 
+.row-status-finished {
+  background: #e8f8f0 !important;
+}
+.row-status-labo {
+  background: #fff9e6 !important;
+}
+
 /* Calendar overrides */
 #appointmentCalendar .fc {
   --fc-button-bg-color: #1d7bff;
@@ -1662,6 +1669,13 @@ select:focus {
   display: grid;
   place-items: center;
   font-weight: 700;
+}
+.profile-email {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 180px;
+  display: block;
 }
 
 .readonly-input {

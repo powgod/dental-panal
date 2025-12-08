@@ -33,6 +33,14 @@ function renderPatients(patientsToRender = patients) {
     const remaining = (p.price || 0) - (p.advance || 0);
     const row = document.createElement("tr");
 
+    const statusClass =
+      p.status === "Finished"
+        ? "row-status-finished"
+        : p.status === "In Labo"
+        ? "row-status-labo"
+        : "";
+    if (statusClass) row.classList.add(statusClass);
+
     row.innerHTML = `
       <td>${p.name}</td>
       <td>${p.phone}</td>
