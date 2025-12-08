@@ -47,11 +47,12 @@ const metricConfigs = [
     link: "appointments.html",
   },
   {
-    id: "labWork",
-    label: "Lab Work",
-    icon: "fa-flask",
+    id: "cash",
+    label: "Cash in Hand",
+    icon: "fa-sack-dollar",
     color: "#9b59b6",
-    link: "labos.html",
+    suffix: " MAD",
+    link: "expenses.html",
   },
   {
     id: "payments",
@@ -231,20 +232,33 @@ function renderMetrics() {
   const patients = Object.values(state.patients || {});
   const appointments = Object.values(state.appointments || {});
   const labos = Object.values(state.labos || {});
+  const expenses = Object.values(state.expenses || {});
+  const supplies = Object.values(state.supplies || {});
 
   const patientsInRange = filterByRange(patients, "date");
   const appointmentsInRange = filterByRange(appointments, "date");
-  const labosInRange = filterByRange(labos, "date");
 
   const totalAdvance = patients.reduce(
     (sum, p) => sum + (Number(p.advance) || 0),
     0
   );
+  const labTotal = labos.reduce(
+    (sum, l) => sum + (Number(l.price) || 0),
+    0
+  );
+  const expensesTotal = expenses.reduce(
+    (sum, e) => sum + (Number(e.amount) || 0),
+    0
+  );
+  const suppliesTotal = supplies.reduce(
+    (sum, s) => sum + (Number(s.unitPrice || 0) * Number(s.quantity || 0)),
+    0
+  );
+  const cashInHand = totalAdvance - (labTotal + expensesTotal + suppliesTotal);
 
   // Trends compare current vs previous for the selected range.
   const patientsAgg = rangeTotals(patients, "date", () => 1);
   const appointmentsAgg = rangeTotals(appointments, "date", () => 1);
-  const labAgg = rangeTotals(labos, "date", () => 1);
   const paymentsAgg = rangeTotals(
     patients,
     "date",
@@ -260,18 +274,18 @@ function renderMetrics() {
       appointmentsAgg.currentTotal,
       appointmentsAgg.prevTotal
     ),
-    labWork: computeTrend(labAgg.currentTotal, labAgg.prevTotal),
     payments: computeTrend(
       paymentsAgg.currentTotal,
       paymentsAgg.prevTotal
     ),
+    cash: null,
   };
 
   const values = {
     totalPatients: patientsInRange.length,
     appointments: appointmentsInRange.length,
-    labWork: labosInRange.length,
     payments: totalAdvance.toFixed(2),
+    cash: cashInHand.toFixed(2),
   };
 
   metricConfigs.forEach((config) => {
