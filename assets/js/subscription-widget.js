@@ -16,39 +16,53 @@ firebase.auth().onAuthStateChanged((user) => {
         const status = document.getElementById("subscriptionStatus");
         const date = document.getElementById("subscriptionDate");
         const renew = document.getElementById("renewBtn");
+        const bar = document.getElementById("subscriptionBar");
 
-        if (sub.status === "trial") {
+if (sub.status === "trial") {
 
-            const days = Math.max(0,
-                Math.ceil((sub.trialEnd - now) / 86400000)
-            );
+    const total = 14;
+    const days = Math.max(0, Math.ceil((sub.trialEnd-now)/86400000));
 
-            status.innerHTML = "🟡 Free Trial";
-            date.innerHTML = days + " day(s) remaining";
+    const percent = (days/total)*100;
 
-            renew.style.display = "inline-block";
+    status.innerHTML="🟡 Free Trial";
+    date.innerHTML=days+" day(s) remaining";
 
-        }
+    bar.style.width=percent+"%";
+    bar.style.background="#fbbf24";
 
-        else if (sub.status === "active") {
+    renew.style.display="inline-block";
 
-            const days = Math.max(0,
-                Math.ceil((sub.subscriptionEnd - now) / 86400000)
-            );
+}
 
-            status.innerHTML = "🟢 Premium";
-            date.innerHTML = "Expires in " + days + " day(s)";
+else if(sub.status==="active"){
 
-        }
+    const total=30;
+    const days=Math.max(0,Math.ceil((sub.subscriptionEnd-now)/86400000));
 
-        else {
+    const percent=(days/total)*100;
 
-            status.innerHTML = "🔴 Subscription Expired";
-            date.innerHTML = "Renew to continue using ClinicPanel";
+    status.innerHTML="🟢 Premium";
 
-            renew.style.display = "inline-block";
+    date.innerHTML="Expires in "+days+" day(s)";
 
-        }
+    bar.style.width=percent+"%";
+    bar.style.background="#22c55e";
+
+}
+
+else{
+
+    status.innerHTML="🔴 Subscription Expired";
+
+    date.innerHTML="Please renew your subscription.";
+
+    bar.style.width="100%";
+    bar.style.background="#ef4444";
+
+    renew.style.display="inline-block";
+
+}
 
     });
 
