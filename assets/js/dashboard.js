@@ -398,10 +398,9 @@ function updateCharts() {
     type: "doughnut",
     data: {
       labels: Object.keys(workTypes),
-      datasets: [
-        {
-          data: Object.values(workTypes),
-          backgroundColor: [
+      datasets: [{
+        data: Object.values(workTypes),
+        backgroundColor: [
             "#1d7bff",
             "#e74c3c",
             "#f39c12",
@@ -414,15 +413,32 @@ function updateCharts() {
             "#c0392b",
             "#2980b9",
             "#8e44ad",
-          ],
-        },
-      ],
+        ],
+        borderWidth: 0,
+        hoverOffset: 8,
+    }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: true,
+      cutout: "68%",
+animation: {
+    animateRotate: true,
+    duration: 1000
+},
       plugins: {
-        legend: { position: "right" },
+        legend: {
+          position: "bottom",
+          labels: {
+              boxWidth: 12,
+              boxHeight: 12,
+              padding: 18,
+              font: {
+                  size: 13,
+                  family: "Inter"
+              }
+          }
+      },
       },
     },
   });
