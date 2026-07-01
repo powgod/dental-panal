@@ -85,14 +85,31 @@
               // Create initial profile in database
               const db = firebase.database();
               const profileRef = db.ref("profiles/" + user.uid);
+              const now = Date.now();
+              const trialEnd = now + (14 * 24 * 60 * 60 * 1000); // 14 days
 
-              profileRef.set({
+             profileRef
+              .set({
                 email: user.email,
                 name: "",
                 phone: "",
                 specialization: "",
                 clinic: "",
-                createdAt: new Date().toISOString(),
+            createdAt: new Date().toISOString(),
+
+                subscription: {
+                status: "trial",
+                trialStart: now,
+                trialEnd: trialEnd,
+                subscriptionEnd: null
+                }
+              })
+              .then(() => {
+                localStorage.setItem("loggedIn", "true");
+                localStorage.setItem("uid", user.uid);
+
+                alert("✅ Account created successfully!");
+                window.location.href = "dashboard.html";
               });
 
               // Store login info
