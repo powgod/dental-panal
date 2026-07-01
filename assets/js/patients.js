@@ -24,6 +24,7 @@ const patientTable = document.querySelector("#patientTable tbody");
 
 let patients = {}; // will hold patients from Firebase as an object
 let editingKey = null;
+let currentNoteKey = null;
 let filteredPatients = {}; // will hold filtered results
 
 function renderPatients(patientsToRender = patients) {
@@ -78,20 +79,53 @@ function renderPatients(patientsToRender = patients) {
   }
 }
 window.openNoteModal = function (key) {
+
+  currentNoteKey = key;
+
   const p = patients[key];
 
-  document.getElementById("patientNoteContent").innerHTML =
-    p.note && p.note.trim() !== ""
-      ? p.note
-      : "<em>No note available.</em>";
+  document.getElementById("patientNoteContent").value =
+      p.note || "";
 
   document.getElementById("noteModal").style.display = "flex";
+
 };
 
 window.closeNoteModal = function () {
+
   document.getElementById("noteModal").style.display = "none";
+
+  currentNoteKey = null;
+
 };
 
+window.saveCurrentNote = function () {
+
+  if (!currentNoteKey) return;
+
+  const note = document.getElementById("patientNoteContent").value;
+
+  patients[currentNoteKey].note = note;
+
+  patientRef
+      .child(currentNoteKey)
+      .update({
+          note: note
+      })
+      .then(() => {
+
+          Toast.success("Note updated");
+
+          closeNoteModal();
+
+      })
+      .catch(error => {
+
+          Toast.error(error.message);
+
+      });
+
+};
 // Search and Filter functionality
 function applyFilters() {
   const searchTerm = document.getElementById("searchBar").value.toLowerCase();
