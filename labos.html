@@ -1,206 +1,350 @@
-<!DOCTYPE html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Lab Work</title>
-    <link rel="stylesheet" href="assets/css/style.css" />
-    <link rel="stylesheet" href="assets/css/toast.css" />
-    <link rel="icon" type="image/png" href="assets/images/favicon.png" />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
-    />
-  </head>
-  <body>
-    <div class="container">
-      <div class="sidebar">
-        <div class="sidebar-title">🦷 ClinicPanel</div>
-        <a href="dashboard.html" class="menu-link"
-          ><i class="fa fa-chart-line"></i> Dashboard</a
-        >
-        <a href="patients.html" class="menu-link"
-          ><i class="fa fa-user-injured"></i> Patients</a
-        >
-        <a href="medical_history.html" class="menu-link"
-          ><i class="fa fa-notes-medical"></i> Medical History</a
-        >
-        <a href="labos.html" class="menu-link active"
-          ><i class="fa fa-flask"></i> Lab Work</a
-        >
-        <a href="reception.html" class="menu-link"
-          ><i class="fa fa-bell"></i> Reception</a
-        >
-        <a href="expenses.html" class="menu-link"
-          ><i class="fa fa-wallet"></i> Expense</a
-        >
-        <a href="medical.html" class="menu-link"
-          ><i class="fa fa-kit-medical"></i> Medical Supplies</a
-        >
-        <a href="appointments.html" class="menu-link"
-          ><i class="fa fa-calendar-check"></i> Appointments</a
-        >
-        <a href="chatbot.html" class="menu-link"
-          ><i class="fa fa-robot"></i> AI Chatbot</a
-        >
-        <a href="profile.html" class="menu-link"
-          ><i class="fa fa-user-circle"></i> Profile</a
-        >
-        <div class="logout-container">
-          <button id="logoutBtn">
-            <i class="fa fa-sign-out-alt"></i> Logout
+const uid = localStorage.getItem("uid");
+if (!uid) {
+  Toast.error("User not logged in");
+  window.location.href = "index.html"; // or redirect to login
+}
+
+const db = firebase.database();
+const labosRef = db.ref("labos/" + uid);
+
+const laboForm = document.getElementById("laboForm");
+const laboTableBody = document.querySelector("#laboTable tbody");
+
+let labos = {};
+let editingLaboKey = null;
+let filteredLabos = {}; // will hold filtered results
+
+// Validate function stays the same
+function validateLaboData(data) {
+  if (!data.name.trim()) {
+    Toast.warning("Please enter the labo name.");
+    return false;
+  }
+  if (isNaN(data.price) || data.price < 0) {
+    Toast.warning("Please enter a valid positive labo price.");
+    return false;
+  }
+  if (!data.date) {
+    Toast.warning("Please select the labo date.");
+    return false;
+  }
+  if (!data.status) {
+    Toast.warning("Please select labo status.");
+    return false;
+  }
+  if (!data.sendDate) {
+    Toast.warning("Please select the labo send date.");
+    return false;
+  }
+  return true;
+}
+
+function getStatusClass(status) {
+  switch (status) {
+    case "Working":
+      return "status-working";
+
+    case "Delivered":
+      return "status-delivered";
+
+    case "Sent":
+      return "status-sent";
+
+    default:
+      return "status-pending";
+  }
+}
+
+function renderLabos(labosToRender = labos) {
+  laboTableBody.innerHTML = "";
+
+  Object.entries(labosToRender).forEach(([key, l]) => {
+
+    const tr = document.createElement("tr");
+
+    tr.innerHTML = `
+
+      <td>${l.name}</td>
+
+      <td>${Number(l.price).toFixed(2)} DH</td>
+
+      <td>${l.date}</td>
+
+      <td>
+          <span class="status-badge ${getStatusClass(l.status)}">
+              ${l.status}
+          </span>
+      </td>
+
+      <td>${l.sendDate}</td>
+
+      <td class="action-buttons">
+
+          <button
+              class="icon-btn edit-btn"
+              onclick="editLabo('${key}')"
+              title="Edit">
+
+              <i class="fa-solid fa-pen"></i>
+
           </button>
-        </div>
-      </div>
 
-      <div class="content">
-        <h1>Lab Work</h1>
+          <button
+              class="icon-btn note-btn"
+              onclick="openLaboNote('${key}')"
+              title="Note">
 
-        <!-- Search and Filter Section -->
-        <div class="search-filter-section">
-          <input
-            type="text"
-            id="searchLaboBar"
-            placeholder="🔍 Search by name..."
-          />
-          <select id="filterLaboStatus" aria-label="Filter by lab status">
-            <option value="">All Status</option>
-            <option value="Working">Working</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Sent">Sent</option>
-            <option value="Pending">Pending</option>
-            <option value="Completed">Completed</option>
-          </select>
-          <button id="exportLaboBtn" class="export-btn">
-            📥 Export to CSV
+              <i class="fa-solid fa-note-sticky"></i>
+
           </button>
-        </div>
 
-        <div class="action-group" style="margin-bottom: 10px">
-          <button class="primary-btn" data-toggle-target="laboForm">
-            + Add Lab Work
+          <button
+              class="icon-btn delete-btn"
+              onclick="deleteLabo('${key}')"
+              title="Delete">
+
+              <i class="fa-solid fa-trash"></i>
+
           </button>
-        </div>
 
-        <!-- Add Labo Form -->
-        <form id="laboForm" class="hidden card collapsible">
-          <input type="text" id="laboName" placeholder="Name" required />
-          <input
-            type="number"
-            id="laboPrice"
-            placeholder="Price"
-            min="0"
-            step="0.01"
-            required
-          />
-          <input type="date" id="laboDate" title="Lab work date" required />
-          <select id="laboStatus" aria-label="Lab work status" required>
-            <option value="" disabled selected>Status</option>
-            <option value="Working">Working</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Sent">Sent</option>
-          </select>
-          <input
-            type="date"
-            id="laboSendDate"
-            placeholder="Date Sent"
-            required
-          />
-          <input type="text" id="laboNote" placeholder="Note" />
-          <div class="form-actions">
-            <button type="submit" class="primary-btn">Add Labo</button>
-            <button
-              type="button"
-              class="ghost-btn"
-              data-toggle-target="laboForm"
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
+      </td>
 
-        <table id="laboTable">
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>Price</th>
-              <th>Date</th>
-              <th>Status</th>
-              <th>Send Date</th>
-              <th>Note</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody></tbody>
-        </table>
-      </div>
-    </div>
+    `;
 
-    <!-- Edit Labo Modal -->
-    <div id="laboModal" class="modal">
-      <div class="modal-content">
-        <span id="laboModalClose" class="close">&times;</span>
-        <h2>Edit Labo</h2>
-        <form id="laboEditForm">
-          <input type="text" id="editLaboName" placeholder="Name" required />
-          <input
-            type="number"
-            id="editLaboPrice"
-            placeholder="Price"
-            min="0"
-            step="0.01"
-            required
-          />
-          <input type="date" id="editLaboDate" title="Lab work date" required />
-          <select id="editLaboStatus" aria-label="Lab work status" required>
-            <option value="" disabled selected>Select Status</option>
-            <option value="Working">Working</option>
-            <option value="Delivered">Delivered</option>
-            <option value="Pending">Pending</option>
-            <option value="Completed">Completed</option>
-            <option value="Sent">Sent</option>
-          </select>
-          <input type="date" id="editLaboSendDate" title="Send date" required />
-          <input type="text" id="editLaboNote" placeholder="Note" />
-          <button type="submit">Save Changes</button>
-        </form>
-      </div>
-    </div>
+    laboTableBody.appendChild(tr);
 
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-database-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth-compat.js"></script>
-    <script src="assets/js/firebase.js"></script>
-    <script src="assets/js/subscription-check.js"></script>
-    <script src="assets/js/common.js"></script>
-    <script src="assets/js/labos.js"></script>
+  });
+}
+window.openLaboNote = function (key) {
 
-    <script>
-      if (localStorage.getItem("loggedIn") !== "true") {
-        window.location.href = "index.html";
-      }
+  const l = labos[key];
 
-      // Modal open/close handlers (you can also put these in labos.js)
-      const laboModal = document.getElementById("laboModal");
-      const laboModalClose = document.getElementById("laboModalClose");
+  document.getElementById("laboNoteContent").innerHTML =
+      l.note && l.note.trim()
+          ? l.note
+          : "<em>No note available.</em>";
 
-      laboModalClose.addEventListener("click", () => {
-        laboModal.style.display = "none";
+  document.getElementById("laboNoteModal").style.display = "flex";
+
+};
+
+window.closeLaboNote = function () {
+
+  document.getElementById("laboNoteModal").style.display = "none";
+
+};
+
+// Search and Filter functionality for labos
+function applyLaboFilters() {
+  const searchTerm = document
+    .getElementById("searchLaboBar")
+    .value.toLowerCase();
+  const statusFilter = document.getElementById("filterLaboStatus").value;
+
+  filteredLabos = {};
+
+  for (const key in labos) {
+    const l = labos[key];
+    const matchesSearch = l.name.toLowerCase().includes(searchTerm);
+    const matchesStatus = !statusFilter || l.status === statusFilter;
+
+    if (matchesSearch && matchesStatus) {
+      filteredLabos[key] = l;
+    }
+  }
+
+  renderLabos(filteredLabos);
+}
+
+// Export to CSV functionality for labos
+function exportLabosToCSV() {
+  const dataToExport =
+    Object.keys(filteredLabos).length > 0 ? filteredLabos : labos;
+
+  let csv = "Name,Price,Date,Status,Send Date,Note\n";
+
+  for (const key in dataToExport) {
+    const l = dataToExport[key];
+    csv += `"${l.name}",${Number(l.price).toFixed(2)},"${l.date}","${
+      l.status
+    }","${l.sendDate}","${l.note || ""}"\n`;
+  }
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = window.URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `lab_work_${new Date().toISOString().split("T")[0]}.csv`;
+  a.click();
+  window.URL.revokeObjectURL(url);
+}
+
+// Event listeners for search and filters
+document
+  .getElementById("searchLaboBar")
+  .addEventListener("input", applyLaboFilters);
+document
+  .getElementById("filterLaboStatus")
+  .addEventListener("change", applyLaboFilters);
+document
+  .getElementById("exportLaboBtn")
+  .addEventListener("click", exportLabosToCSV);
+
+// Edit a labo entry
+window.editLabo = function (key) {
+
+  editingLaboKey = key;
+
+  const l = labos[key];
+
+  document.getElementById("editLaboName").value = l.name;
+  document.getElementById("editLaboPrice").value = l.price;
+  document.getElementById("editLaboDate").value = l.date;
+  document.getElementById("editLaboStatus").value = l.status;
+  document.getElementById("editLaboSendDate").value = l.sendDate;
+  document.getElementById("editLaboNote").value = l.note || "";
+
+  document.getElementById("laboModal").style.display = "flex";
+
+};
+window.closeLaboModal = function () {
+
+  document.getElementById("laboModal").style.display = "none";
+
+};
+window.saveLaboEdit = function () {
+
+    if (!editingLaboKey) return;
+
+    const updated = {
+
+        name: document.getElementById("editLaboName").value.trim(),
+
+        price: parseFloat(document.getElementById("editLaboPrice").value),
+
+        date: document.getElementById("editLaboDate").value,
+
+        status: document.getElementById("editLaboStatus").value,
+
+        sendDate: document.getElementById("editLaboSendDate").value,
+
+        note: document.getElementById("editLaboNote").value.trim()
+
+    };
+
+    if (!validateLaboData(updated))
+        return;
+
+    labosRef.child(editingLaboKey)
+
+        .set(updated)
+
+        .then(() => {
+
+            Toast.success("Lab updated successfully.");
+
+            closeLaboModal();
+
+            editingLaboKey = null;
+
+        })
+
+        .catch(err =>
+
+            Toast.error(err.message)
+
+        );
+
+};
+// Delete a labo entry
+window.deleteLabo = function (key) {
+  if (confirm("Are you sure you want to delete this labo entry?")) {
+    labosRef
+      .child(key)
+      .remove()
+      .then(() => Toast.success("Labo entry deleted successfully."))
+      .catch((err) => Toast.error("Error deleting labo: " + err.message));
+  }
+};
+
+function resetLaboForm() {
+
+  laboForm.reset();
+
+  editingLaboKey = null;
+
+  document.querySelector("#laboForm button[type='submit']").textContent =
+      "Add Lab Work";
+
+}
+
+laboForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  const newLabo = {
+    name: laboForm.laboName.value.trim(),
+    price: parseFloat(laboForm.laboPrice.value),
+    date: laboForm.laboDate.value,
+    status: laboForm.laboStatus.value,
+    sendDate: laboForm.laboSendDate.value,
+    note: laboForm.laboNote.value.trim(),
+  };
+
+  if (!validateLaboData(newLabo)) return;
+
+  if (editingLaboKey) {
+    // Update existing labo in Firebase
+    labosRef
+      .child(editingLaboKey)
+      .set(newLabo)
+      .then(() => {
+        Toast.success("Labo entry updated successfully.");
+        resetLaboForm();
+      })
+      .catch((err) => Toast.error("Error updating labo: " + err.message));
+  } else {
+    // Add new labo to Firebase
+    labosRef
+      .push(newLabo)
+      .then(() => {
+        Toast.success("Labo entry added successfully.");
+        resetLaboForm();
+      })
+      .catch((err) => Toast.error("Error adding labo: " + err.message));
+  }
+});
+const logoutBtn = document.getElementById("logoutBtn");
+
+if (logoutBtn) {
+  logoutBtn.addEventListener("click", () => {
+    firebase
+      .auth()
+      .signOut()
+      .then(() => {
+        window.location.href = "index.html"; // Adjust if your login page has a different name
+      })
+      .catch((error) => {
+        console.error("Logout failed:", error);
       });
+  });
+}
 
-      window.onclick = function (event) {
-        if (event.target === laboModal) {
-          laboModal.style.display = "none";
-        }
-      };
-    </script>
+// Listen for realtime updates to labos
+labosRef.on("value", (snapshot) => {
+  labos = snapshot.val() || {};
+  renderLabos();
+  updateDashboard(); // update dashboard when labos change
+});
 
-    <!-- Toast System -->
-    <script src="assets/js/toast.js"></script>
-    <div id="toast-container"></div>
-  </body>
-</html>
+firebase.auth().onAuthStateChanged((user) => {
+  if (user) {
+    const uid = user.uid;
+    localStorage.setItem("uid", uid); // optional
+    const db = firebase.database();
+    const labosRef = db.ref("labos/" + uid);
+
+    // ⬇️ Put all your app logic here (form, events, listeners, etc.)
+  } else {
+    // Not logged in → redirect
+    window.location.href = "index.html";
+  }
+});
