@@ -52,93 +52,86 @@
     <script src="https://www.gstatic.com/firebasejs/12.0.0/firebase-database-compat.js"></script>
     <script src="assets/js/firebase.js"></script>
     <script>
-      document
-        .getElementById("registerForm")
-        .addEventListener("submit", function (e) {
-          e.preventDefault();
+document
+  .getElementById("registerForm")
+  .addEventListener("submit", function (e) {
+    e.preventDefault();
 
-          const email = document.getElementById("email").value.trim();
-          const password = document.getElementById("password").value;
-          const confirmPassword =
-            document.getElementById("confirmPassword").value;
-          const errorMsg = document.getElementById("errorMsg");
+    const email = document.getElementById("email").value.trim();
+    const password = document.getElementById("password").value;
+    const confirmPassword = document.getElementById("confirmPassword").value;
+    const errorMsg = document.getElementById("errorMsg");
 
-          // Validate passwords match
-          if (password !== confirmPassword) {
-            errorMsg.textContent = "❌ Passwords do not match!";
-            return;
+    errorMsg.textContent = "";
+
+    // Validate passwords match
+    if (password !== confirmPassword) {
+      errorMsg.textContent = "❌ Passwords do not match!";
+      return;
+    }
+
+    // Validate password length
+    if (password.length < 6) {
+      errorMsg.textContent = "❌ Password must be at least 6 characters!";
+      return;
+    }
+
+    // Create user with Firebase Auth
+    firebase
+      .auth()
+      .createUserWithEmailAndPassword(email, password)
+      .then((userCredential) => {
+        const user = userCredential.user;
+
+        const db = firebase.database();
+        const profileRef = db.ref("profiles/" + user.uid);
+
+        const now = Date.now();
+        const trialEnd = now + (14 * 24 * 60 * 60 * 1000); // 14 days
+
+        // IMPORTANT: Return the Promise
+        return profileRef.set({
+          email: user.email,
+          name: "",
+          phone: "",
+          specialization: "",
+          clinic: "",
+          createdAt: new Date().toISOString(),
+
+          subscription: {
+            status: "trial",
+            trialStart: now,
+            trialEnd: trialEnd,
+            subscriptionEnd: null
           }
-
-          // Validate password length
-          if (password.length < 6) {
-            errorMsg.textContent = "❌ Password must be at least 6 characters!";
-            return;
-          }
-
-          // Create user with Firebase Auth
-          firebase
-            .auth()
-            .createUserWithEmailAndPassword(email, password)
-            .then((userCredential) => {
-              const user = userCredential.user;
-
-              // Create initial profile in database
-              const db = firebase.database();
-              const profileRef = db.ref("profiles/" + user.uid);
-              const now = Date.now();
-              const trialEnd = now + (14 * 24 * 60 * 60 * 1000); // 14 days
-
-             profileRef
-              .set({
-                email: user.email,
-                name: "",
-                phone: "",
-                specialization: "",
-                clinic: "",
-            createdAt: new Date().toISOString(),
-
-                subscription: {
-                status: "trial",
-                trialStart: now,
-                trialEnd: trialEnd,
-                subscriptionEnd: null
-                }
-              })
-              .then(() => {
-                localStorage.setItem("loggedIn", "true");
-                localStorage.setItem("uid", user.uid);
-
-                alert("✅ Account created successfully!");
-                window.location.href = "dashboard.html";
-              });
-
-              // Store login info
-              localStorage.setItem("loggedIn", "true");
-              localStorage.setItem("uid", user.uid);
-
-              alert(
-                "✅ Account created successfully! Redirecting to dashboard..."
-              );
-              window.location.href = "dashboard.html";
-            })
-            .catch((error) => {
-              console.error("Registration error:", error);
-
-              // User-friendly error messages
-              let message = error.message;
-              if (error.code === "auth/email-already-in-use") {
-                message =
-                  "This email is already registered. Please login instead.";
-              } else if (error.code === "auth/invalid-email") {
-                message = "Invalid email address format.";
-              } else if (error.code === "auth/weak-password") {
-                message = "Password is too weak. Use at least 6 characters.";
-              }
-
-              errorMsg.textContent = "❌ " + message;
-            });
         });
-    </script>
+      })
+      .then(() => {
+        const user = firebase.auth().currentUser;
+
+        localStorage.setItem("loggedIn", "true");
+        localStorage.setItem("uid", user.uid);
+
+        alert("✅ Account created successfully!");
+        window.location.href = "dashboard.html";
+      })
+      .catch((error) => {
+        console.error("Registration error:", error);
+
+        let message = error.message;
+
+        if (error.code === "auth/email-already-in-use") {
+          message = "This email is already registered. Please login instead.";
+        } else if (error.code === "auth/invalid-email") {
+          message = "Invalid email address format.";
+        } else if (error.code === "auth/weak-password") {
+          message = "Password is too weak. Use at least 6 characters.";
+        }
+
+        errorMsg.textContent = "❌ " + message;
+      });
+  });
+</script>
 
     <!-- Toast System -->
     <script src="assets/js/toast.js"></script>
