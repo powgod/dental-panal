@@ -59,41 +59,52 @@
       </div>
       <div class="content">
         <div class="dashboard-hero card">
-          <div>
-            <p class="eyebrow">Overview</p>
-            <h1 id="dashboardWelcome">Welcome Back, Doctor!</h1>
-            <p class="muted" id="dashboardDate">Loading...</p>
+
+          <div class="hero-left">
+      
+              <p class="eyebrow">Overview</p>
+      
+              <h1 id="dashboardWelcome">Welcome Back, Doctor!</h1>
+      
+              <p class="muted" id="dashboardDate">Loading...</p>
+      
+              <div class="pill-switch" id="timeframeSwitch">
+                  <button class="pill-btn active" data-range="weekly">Weekly</button>
+                  <button class="pill-btn" data-range="monthly">Monthly</button>
+                  <button class="pill-btn" data-range="yearly">Yearly</button>
+              </div>
+      
           </div>
-          <div class="pill-switch" id="timeframeSwitch">
-            <button class="pill-btn active" data-range="weekly">Weekly</button>
-            <button class="pill-btn" data-range="monthly">Monthly</button>
-            <button class="pill-btn" data-range="yearly">Yearly</button>
+      
+          <div class="subscription-card">
+      
+              <div class="subscription-info">
+      
+                  <div class="subscription-header">
+                      💎 Subscription
+                  </div>
+      
+                  <div id="subscriptionStatus" class="subscription-status">
+                      Loading...
+                  </div>
+      
+                  <div id="subscriptionDate" class="subscription-date">
+                      Checking...
+                  </div>
+      
+                  <div class="subscription-progress">
+                      <div id="subscriptionBar" class="subscription-progress-fill"></div>
+                  </div>
+      
+              </div>
+      
+              <button id="renewBtn" class="renew-btn" style="display:none">
+                  Renew
+              </button>
+      
           </div>
-         <div class="card subscription-card">
-
-  <div class="subscription-info">
-
-    <div class="subscription-header">
-      💎 Subscription
-    </div>
-
-    <div id="subscriptionStatus" class="subscription-status">
-      Loading...
-    </div>
-
-    <div id="subscriptionDate" class="subscription-date">
-      Checking...
-    </div>
-
-    <div class="subscription-progress">
-      <div id="subscriptionBar" class="subscription-progress-fill"></div>
-    </div>
-
-  </div>
-
-  <button id="renewBtn" class="renew-btn" style="display:none">
-    Renew
-  </button>
+      
+      </div>
 
 </div>
         </div>
