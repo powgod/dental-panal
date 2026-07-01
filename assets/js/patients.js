@@ -46,21 +46,51 @@ function renderPatients(patientsToRender = patients) {
       <td>${p.phone}</td>
       <td>${p.work}</td>
       <td>${p.status}</td>
-      <td>${p.note || ""}</td>
       <td>${p.firstVisit || ""}</td>
       <td>${p.nextVisit || ""}</td>
       <td>${p.price || 0}</td>
       <td>${p.advance || 0}</td>
       <td>${remaining}</td>
       <td>${p.date || ""}</td>
-      <td>
-        <button onclick="openEditModal('${key}')">✏️</button>
-        <button onclick="deletePatient('${key}')">🗑️</button>
-      </td>
+      <td class="action-buttons">
+
+  <button class="icon-btn edit-btn"
+          onclick="openEditModal('${key}')"
+          title="Edit">
+      <i class="fa-solid fa-pen"></i>
+  </button>
+
+  <button class="icon-btn note-btn"
+          onclick="openNoteModal('${key}')"
+          title="View Note">
+      <i class="fa-solid fa-note-sticky"></i>
+  </button>
+
+  <button class="icon-btn delete-btn"
+          onclick="deletePatient('${key}')"
+          title="Delete">
+      <i class="fa-solid fa-trash"></i>
+  </button>
+
+</td>
     `;
     patientTable.appendChild(row);
   }
 }
+window.openNoteModal = function (key) {
+  const p = patients[key];
+
+  document.getElementById("patientNoteContent").innerHTML =
+    p.note && p.note.trim() !== ""
+      ? p.note
+      : "<em>No note available.</em>";
+
+  document.getElementById("noteModal").style.display = "flex";
+};
+
+window.closeNoteModal = function () {
+  document.getElementById("noteModal").style.display = "none";
+};
 
 // Search and Filter functionality
 function applyFilters() {
