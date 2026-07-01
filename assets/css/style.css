@@ -810,6 +810,280 @@ body {
   box-shadow:0 0 0 3px rgba(37,99,235,.15);
 
 }
+.action-buttons{
+
+  display:flex;
+  
+  gap:8px;
+  
+  justify-content:center;
+  
+  }
+  
+  .edit-btn{
+  
+  background:#e8f8ee;
+  
+  color:#16a34a;
+  
+  }
+  
+  .edit-btn:hover{
+  
+  background:#16a34a;
+  
+  color:#fff;
+  
+  }
+  
+  .note-btn{
+  
+  background:#fff8db;
+  
+  color:#ca8a04;
+  
+  }
+  
+  .note-btn:hover{
+  
+  background:#ca8a04;
+  
+  color:#fff;
+  
+  }
+  
+  .delete-btn{
+  
+  background:#ffeaea;
+  
+  color:#dc2626;
+  
+  }
+  
+  .delete-btn:hover{
+  
+  background:#dc2626;
+  
+  color:#fff;
+  
+  }
+  
+  .status-badge{
+  
+  padding:5px 12px;
+  
+  border-radius:999px;
+  
+  font-size:13px;
+  
+  font-weight:600;
+  
+  display:inline-block;
+  
+  }
+  .labo-edit-modal{
+
+    max-width:700px;
+    
+    }
+    
+    .form-grid{
+    
+    display:grid;
+    
+    grid-template-columns:1fr 1fr;
+    
+    gap:18px;
+    
+    margin-top:20px;
+    
+    }
+    
+    .form-group{
+    
+    display:flex;
+    
+    flex-direction:column;
+    
+    }
+    
+    .form-group label{
+    
+    margin-bottom:6px;
+    
+    font-size:13px;
+    
+    font-weight:600;
+    
+    color:#6b7280;
+    
+    }
+    
+    .form-group input,
+    
+    .form-group select,
+    
+    .form-group textarea{
+    
+    padding:10px 12px;
+    
+    border:1px solid #dbe4f0;
+    
+    border-radius:10px;
+    
+    font-size:14px;
+    
+    font-family:inherit;
+    
+    }
+    
+    .form-group textarea{
+    
+    resize:none;
+    
+    height:50px;
+    
+    }
+    
+    .note-group{
+    
+    grid-column:2;
+    
+    }
+    .search-filter-section{
+
+      display:flex;
+      
+      justify-content:space-between;
+      
+      align-items:center;
+      
+      margin-bottom:18px;
+      
+      gap:15px;
+      
+      }
+      
+      .search-left{
+      
+      display:flex;
+      
+      gap:12px;
+      
+      flex:1;
+      
+      }
+      
+      .search-left input{
+      
+      flex:1;
+      
+      }
+      
+      .search-right{
+      
+      display:flex;
+      
+      gap:10px;
+      
+      }
+      
+      #laboForm{
+        width:100%;
+        max-width:none;
+        background:#fff;
+        border-radius:18px;
+        padding:20px;
+        margin-top:15px;
+        box-shadow:0 8px 30px rgba(0,0,0,.06);
+    }
+    #laboForm .form-grid{
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:16px;
+  }
+  
+  #laboForm .form-group{
+      display:flex;
+      flex-direction:column;
+  }
+  
+  #laboForm .note-group{
+      grid-column:1 / -1;
+  }
+  
+  .form-grid{
+    display:grid;
+    grid-template-columns:repeat(2,1fr);
+    gap:16px;
+}
+
+.note-group{
+    grid-column:1 / -1;
+}
+  #laboForm textarea{
+      min-height:90px;
+      resize:vertical;
+  }
+      
+      #laboForm textarea{
+      
+      resize:none;
+      
+      min-height:90px;
+      
+      }
+      
+      #laboForm .modal-actions{
+      
+      justify-content:flex-end;
+      
+      margin-top:20px;
+      
+      }
+    .modal-actions{
+    
+    display:flex;
+    
+    justify-content:flex-end;
+    
+    gap:12px;
+    
+    margin-top:22px;
+    
+    }
+  
+  .status-working{
+  
+  background:#fff7cc;
+  
+  color:#b7791f;
+  
+  }
+  
+  .status-delivered{
+  
+  background:#dcfce7;
+  
+  color:#15803d;
+  
+  }
+  
+  .status-sent{
+  
+  background:#dbeafe;
+  
+  color:#2563eb;
+  
+  }
+  
+  .status-pending{
+  
+  background:#f3f4f6;
+  
+  color:#6b7280;
+  
+  }
 
 .note-modal-content{
 
