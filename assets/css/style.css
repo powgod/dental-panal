@@ -1782,60 +1782,114 @@ display:flex;
 justify-content:space-between;
 align-items:center;
 
+gap:30px;
+
 margin:20px 0;
 
-padding:24px;
+padding:28px;
+
+border-radius:18px;
+
+background:linear-gradient(135deg,#ffffff,#f7f9fc);
+
+box-shadow:0 12px 30px rgba(0,0,0,.06);
 
 }
 
-.subscription-title{
+.subscription-info{
+
+flex:1;
+
+}
+
+.subscription-header{
 
 font-size:13px;
+
+font-weight:600;
+
+letter-spacing:1px;
+
 text-transform:uppercase;
-color:#777;
-margin-bottom:8px;
+
+color:#7b8794;
+
+margin-bottom:10px;
 
 }
 
 .subscription-status{
 
-font-size:22px;
+font-size:28px;
+
 font-weight:700;
-margin-bottom:6px;
+
+margin-bottom:8px;
 
 }
 
 .subscription-date{
 
 font-size:15px;
-color:#666;
+
+color:#6b7280;
+
+margin-bottom:18px;
+
+}
+
+.subscription-progress{
+
+width:100%;
+
+height:12px;
+
+background:#e8edf4;
+
+border-radius:50px;
+
+overflow:hidden;
+
+}
+
+.subscription-progress-fill{
+
+height:100%;
+
+width:0%;
+
+background:#fbbf24;
+
+transition:.5s;
+
+border-radius:50px;
 
 }
 
 .renew-btn{
 
+padding:14px 26px;
+
+border:none;
+
+border-radius:12px;
+
 background:#0d6efd;
 
 color:white;
 
-border:none;
-
-padding:12px 24px;
-
-border-radius:12px;
-
-font-size:15px;
-
-font-weight:600;
+font-weight:700;
 
 cursor:pointer;
 
-transition:.2s;
+transition:.25s;
 
 }
 
 .renew-btn:hover{
 
 transform:translateY(-2px);
+
+box-shadow:0 10px 20px rgba(13,110,253,.25);
 
 }
