@@ -39,7 +39,129 @@ body {
 .sidebar::-webkit-scrollbar {
   display: none;
 }
+.page-header{
 
+  margin-bottom:20px;
+  
+  }
+  
+  .page-title h1{
+  
+  margin:0;
+  
+  font-size:34px;
+  
+  font-weight:700;
+  
+  }
+  
+  .page-title p{
+  
+  margin-top:6px;
+  
+  color:#6b7280;
+  
+  font-size:15px;
+  
+  }
+  
+  .toolbar{
+  
+  display:flex;
+  
+  justify-content:space-between;
+  
+  align-items:center;
+  
+  padding:18px 22px;
+  
+  margin-bottom:22px;
+  
+  flex-wrap:wrap;
+  
+  gap:15px;
+  
+  }
+  
+  .toolbar-left{
+  
+  display:flex;
+  
+  align-items:center;
+  
+  gap:12px;
+  
+  flex-wrap:wrap;
+  
+  }
+  
+  .toolbar-right{
+  
+  display:flex;
+  
+  align-items:center;
+  
+  gap:12px;
+  
+  }
+  
+  .search-box{
+  
+  display:flex;
+  
+  align-items:center;
+  
+  gap:10px;
+  
+  padding:0 14px;
+  
+  height:46px;
+  
+  background:#f8fafc;
+  
+  border:1px solid #e5e7eb;
+  
+  border-radius:14px;
+  
+  min-width:320px;
+  
+  }
+  
+  .search-box input{
+  
+  border:none;
+  
+  background:transparent;
+  
+  outline:none;
+  
+  width:100%;
+  
+  font-size:15px;
+  
+  }
+  
+  .search-box i{
+  
+  color:#2563eb;
+  
+  }
+  
+  .toolbar select{
+  
+  height:46px;
+  
+  padding:0 15px;
+  
+  border-radius:14px;
+  
+  border:1px solid #e5e7eb;
+  
+  background:white;
+  
+  font-size:14px;
+  
+  }
 /* Mobile menu toggle button */
 .menu-toggle {
   display: none;
