@@ -11,8 +11,6 @@ firebase.auth().onAuthStateChanged((user) => {
       const profile = snapshot.val();
 
       if (!profile || !profile.subscription) {
-        firebase.auth().signOut();
-        localStorage.clear();
         window.location.href = "expired.html";
         return;
       }
@@ -22,8 +20,6 @@ firebase.auth().onAuthStateChanged((user) => {
 
       // Trial expired
       if (sub.status === "trial" && now > sub.trialEnd) {
-        firebase.auth().signOut();
-        localStorage.clear();
         window.location.href = "expired.html";
         return;
       }
@@ -34,10 +30,11 @@ firebase.auth().onAuthStateChanged((user) => {
         sub.subscriptionEnd &&
         now > sub.subscriptionEnd
       ) {
-        firebase.auth().signOut();
-        localStorage.clear();
         window.location.href = "expired.html";
+        return;
       }
+
+      console.log("✅ Subscription valid");
 
     })
     .catch((error) => {
