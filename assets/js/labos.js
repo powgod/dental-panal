@@ -39,24 +39,100 @@ function validateLaboData(data) {
   return true;
 }
 
+function getStatusClass(status) {
+  switch (status) {
+    case "Working":
+      return "status-working";
+
+    case "Delivered":
+      return "status-delivered";
+
+    case "Sent":
+      return "status-sent";
+
+    default:
+      return "status-pending";
+  }
+}
+
 function renderLabos(labosToRender = labos) {
   laboTableBody.innerHTML = "";
+
   Object.entries(labosToRender).forEach(([key, l]) => {
+
     const tr = document.createElement("tr");
+
     tr.innerHTML = `
+
       <td>${l.name}</td>
-      <td>${Number(l.price).toFixed(2)}</td>
+
+      <td>${Number(l.price).toFixed(2)} DH</td>
+
       <td>${l.date}</td>
-      <td>${l.status}</td>
-      <td>${l.sendDate}</td>
-      <td>${l.note || ""}</td>
+
       <td>
-        <button class="edit-btn" onclick="editLabo('${key}')">✏️</button>
-        <button class="delete-btn" onclick="deleteLabo('${key}')">🗑️</button>
-      </td>`;
+          <span class="status-badge ${getStatusClass(l.status)}">
+              ${l.status}
+          </span>
+      </td>
+
+      <td>${l.sendDate}</td>
+
+      <td class="action-buttons">
+
+          <button
+              class="icon-btn edit-btn"
+              onclick="editLabo('${key}')"
+              title="Edit">
+
+              <i class="fa-solid fa-pen"></i>
+
+          </button>
+
+          <button
+              class="icon-btn note-btn"
+              onclick="openLaboNote('${key}')"
+              title="Note">
+
+              <i class="fa-solid fa-note-sticky"></i>
+
+          </button>
+
+          <button
+              class="icon-btn delete-btn"
+              onclick="deleteLabo('${key}')"
+              title="Delete">
+
+              <i class="fa-solid fa-trash"></i>
+
+          </button>
+
+      </td>
+
+    `;
+
     laboTableBody.appendChild(tr);
+
   });
 }
+window.openLaboNote = function (key) {
+
+  const l = labos[key];
+
+  document.getElementById("laboNoteContent").innerHTML =
+      l.note && l.note.trim()
+          ? l.note
+          : "<em>No note available.</em>";
+
+  document.getElementById("laboNoteModal").style.display = "flex";
+
+};
+
+window.closeLaboNote = function () {
+
+  document.getElementById("laboNoteModal").style.display = "none";
+
+};
 
 // Search and Filter functionality for labos
 function applyLaboFilters() {
@@ -116,18 +192,70 @@ document
 
 // Edit a labo entry
 window.editLabo = function (key) {
-  const l = labos[key];
+
   editingLaboKey = key;
-  laboForm.laboName.value = l.name;
-  laboForm.laboPrice.value = l.price;
-  laboForm.laboDate.value = l.date;
-  laboForm.laboStatus.value = l.status;
-  laboForm.laboSendDate.value = l.sendDate;
-  laboForm.laboNote.value = l.note || "";
 
-  laboForm.querySelector("button[type='submit']").textContent = "Update Labo";
+  const l = labos[key];
+
+  document.getElementById("editLaboName").value = l.name;
+  document.getElementById("editLaboPrice").value = l.price;
+  document.getElementById("editLaboDate").value = l.date;
+  document.getElementById("editLaboStatus").value = l.status;
+  document.getElementById("editLaboSendDate").value = l.sendDate;
+  document.getElementById("editLaboNote").value = l.note || "";
+
+  document.getElementById("laboModal").style.display = "flex";
+
 };
+window.closeLaboModal = function () {
 
+  document.getElementById("laboModal").style.display = "none";
+
+};
+window.saveLaboEdit = function () {
+
+    if (!editingLaboKey) return;
+
+    const updated = {
+
+        name: document.getElementById("editLaboName").value.trim(),
+
+        price: parseFloat(document.getElementById("editLaboPrice").value),
+
+        date: document.getElementById("editLaboDate").value,
+
+        status: document.getElementById("editLaboStatus").value,
+
+        sendDate: document.getElementById("editLaboSendDate").value,
+
+        note: document.getElementById("editLaboNote").value.trim()
+
+    };
+
+    if (!validateLaboData(updated))
+        return;
+
+    labosRef.child(editingLaboKey)
+
+        .set(updated)
+
+        .then(() => {
+
+            Toast.success("Lab updated successfully.");
+
+            closeLaboModal();
+
+            editingLaboKey = null;
+
+        })
+
+        .catch(err =>
+
+            Toast.error(err.message)
+
+        );
+
+};
 // Delete a labo entry
 window.deleteLabo = function (key) {
   if (confirm("Are you sure you want to delete this labo entry?")) {
@@ -140,9 +268,14 @@ window.deleteLabo = function (key) {
 };
 
 function resetLaboForm() {
+
   laboForm.reset();
+
   editingLaboKey = null;
-  laboForm.querySelector("button[type='submit']").textContent = "Add Labo";
+
+  document.querySelector("#laboForm button[type='submit']").textContent =
+      "Add Lab Work";
+
 }
 
 laboForm.addEventListener("submit", (e) => {
