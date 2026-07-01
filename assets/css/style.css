@@ -511,12 +511,33 @@ body {
   color: #e74c3c;
 }
 
-.dashboard-hero {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  background: linear-gradient(135deg, #f5f8ff 0%, #e9f0ff 100%);
+.dashboard-hero{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:30px;
+  background:linear-gradient(135deg,#f5f8ff 0%,#e9f0ff 100%);
+}
+
+.hero-left{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-start;
+  flex:1;
+}
+
+.hero-left .muted{
+  margin:6px 0 18px;
+}
+
+.hero-left .pill-switch{
+  margin-top:0;
+}
+
+.subscription-card{
+  width:360px;
+  margin:0;
+  flex-shrink:0;
 }
 
 .pill-switch {
@@ -1891,5 +1912,17 @@ transition:.25s;
 transform:translateY(-2px);
 
 box-shadow:0 10px 20px rgba(13,110,253,.25);
+
+}
+
+@media (max-width:900px){
+
+  .dashboard-hero{
+      flex-direction:column;
+  }
+
+  .subscription-card{
+      width:100%;
+  }
 
 }
