@@ -199,14 +199,18 @@ patientForm.addEventListener("submit", function (e) {
     status: patientStatus.value,
     price: parseFloat(patientPrice.value),
     advance: parseFloat(patientAdvance.value),
-    date: patientDate.value,
+
+    date:
+        patientDate.value ||
+        new Date().toISOString().split("T")[0],
+
     history: [
-      {
-        amount: parseFloat(patientAdvance.value),
-        date: new Date().toLocaleDateString(),
-      },
+        {
+            amount: parseFloat(patientAdvance.value),
+            date: new Date().toLocaleDateString(),
+        },
     ],
-  };
+};
 
   patientRef
     .push(patient)
