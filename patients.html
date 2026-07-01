@@ -123,35 +123,201 @@
     
     </div>
 
-      <form id="patientForm" class="hidden card collapsible">
-        <input type="text" id="patientName" placeholder="Name" required>
-        <input type="text" id="patientPhone" placeholder="Phone" required>
-        <select id="patientWork" aria-label="Type of work" required>
-          <option disabled selected>Type of Work</option>
-          <option>Céramique</option><option>zirconia</option><option>Resine</option>
-          <option>tcs</option><option>Les facettes</option><option>composete</option>
-          <option>les bagues</option><option>Extraction</option><option>Blanchisment</option>
-          <option>Nettoiage</option><option>Snap On Smile</option><option>Provisoire</option>
-        </select>
-        <input type="text" id="patientNote" placeholder="Note" />
-        <input type="date" id="firstVisit" placeholder="First Visit" required />
-        <input type="date" id="nextVisit" placeholder="Next Payment" />
-        <select id="patientStatus" aria-label="Patient status" required>
-          <option disabled selected>Status</option>
-          <option>Still Working</option>
-          <option>Finished</option>
-          <option>In Labo</option>
-        </select>
-        <input type="number" id="patientPrice" placeholder="Price" required />
-        <input type="number" id="patientAdvance" placeholder="Advance" required />
-        <input type="date" id="patientDate" title="Date" required />
-        <div class="form-actions">
-          <button type="submit" class="primary-btn">Add Patient</button>
-          <button type="button" class="ghost-btn" data-toggle-target="patientForm">
-            Cancel
+    <form id="patientForm" class="hidden patient-form card">
+
+      <h2 class="form-title">
+          <i class="fa-solid fa-user-plus"></i>
+          Add New Patient
+      </h2>
+  
+      <!-- Patient Information -->
+      <div class="form-section">
+  
+          <h3>
+              <i class="fa-solid fa-user"></i>
+              Patient Information
+          </h3>
+  
+          <div class="form-grid">
+  
+              <input
+                  type="text"
+                  id="patientName"
+                  placeholder="Full Name"
+                  required
+              >
+  
+              <input
+                  type="text"
+                  id="patientPhone"
+                  placeholder="Phone Number"
+                  required
+              >
+  
+          </div>
+  
+      </div>
+  
+      <!-- Treatment -->
+  
+      <div class="form-section">
+  
+          <h3>
+  
+              <i class="fa-solid fa-tooth"></i>
+  
+              Treatment
+  
+          </h3>
+  
+          <div class="form-grid">
+  
+              <select id="patientWork" required>
+  
+                  <option disabled selected>Type of Work</option>
+  
+                  <option>Céramique</option>
+                  <option>zirconia</option>
+                  <option>Resine</option>
+                  <option>tcs</option>
+                  <option>Les facettes</option>
+                  <option>composete</option>
+                  <option>les bagues</option>
+                  <option>Extraction</option>
+                  <option>Blanchisment</option>
+                  <option>Nettoiage</option>
+                  <option>Snap On Smile</option>
+                  <option>Provisoire</option>
+  
+              </select>
+  
+              <select id="patientStatus" required>
+  
+                  <option disabled selected>Status</option>
+  
+                  <option>Still Working</option>
+  
+                  <option>Finished</option>
+  
+                  <option>In Labo</option>
+  
+              </select>
+  
+          </div>
+  
+      </div>
+  
+      <!-- Financial -->
+  
+      <div class="form-section">
+  
+          <h3>
+  
+              <i class="fa-solid fa-wallet"></i>
+  
+              Financial
+  
+          </h3>
+  
+          <div class="form-grid">
+  
+              <input
+                  type="number"
+                  id="patientPrice"
+                  placeholder="Total Price"
+                  required
+              >
+  
+              <input
+                  type="number"
+                  id="patientAdvance"
+                  placeholder="Advance Paid"
+                  required
+              >
+  
+          </div>
+  
+      </div>
+  
+      <!-- Appointments -->
+  
+      <div class="form-section">
+  
+          <h3>
+  
+              <i class="fa-solid fa-calendar-days"></i>
+  
+              Appointments
+  
+          </h3>
+  
+          <div class="form-grid">
+  
+              <input
+                  type="date"
+                  id="firstVisit"
+                  required
+              >
+  
+              <input
+                  type="date"
+                  id="nextVisit"
+              >
+  
+          </div>
+  
+      </div>
+  
+      <!-- Notes -->
+  
+      <div class="form-section">
+  
+          <h3>
+  
+              <i class="fa-solid fa-note-sticky"></i>
+  
+              Notes
+  
+          </h3>
+  
+          <textarea
+              id="patientNote"
+              rows="5"
+              placeholder="Write notes here..."
+          ></textarea>
+  
+      </div>
+  
+      <input
+          type="date"
+          id="patientDate"
+          required
+          style="display:none"
+      >
+  
+      <div class="form-actions">
+  
+          <button
+              type="button"
+              class="ghost-btn"
+              data-toggle-target="patientForm"
+          >
+              Cancel
           </button>
-        </div>
-      </form>
+  
+          <button
+              type="submit"
+              class="primary-btn"
+          >
+              <i class="fa-solid fa-floppy-disk"></i>
+  
+              Save Patient
+  
+          </button>
+  
+      </div>
+  
+  </form>
       <table id="patientTable">
         <thead><tr><th>Name</th><th>Phone</th><th>Work</th><th>Status</th><th>First Visit</th><th>Next Pay</th><th>Price</th><th>Advance</th><th>Remaining</th><th>Date</th><th>Actions</th> </tr></thead>
         <tbody></tbody>
@@ -167,36 +333,123 @@
 </div>
 </div>
 
-<div id="noteModal" class="modal">
-  <div class="modal-content note-modal">
-    <span class="close-btn" onclick="closeNoteModal()">&times;</span>
+<div id="noteModal" class="modal note-modal">
+  <div class="modal-content note-modal-content">
 
-    <h2>
-      <i class="fa-solid fa-note-sticky"></i>
-      Patient Note
-    </h2>
+    <h2>📝 Patient Note</h2>
 
-    <div id="patientNoteContent"></div>
+    <textarea
+      id="patientNoteContent"
+      class="note-editor"
+      placeholder="No note..."
+    ></textarea>
+
+    <div class="modal-actions">
+      <button class="ghost-btn" onclick="closeNoteModal()">
+        Cancel
+      </button>
+
+      <button class="primary-btn" onclick="saveCurrentNote()">
+        💾 Save Note
+      </button>
+    </div>
+
   </div>
 </div>
 
 <div id="editModal" class="modal">
-  <div class="modal-content">
-    <span class="close-btn" onclick="closeModal()">&times;</span>
-    <h2>Edit Patient</h2>
-    <input type="text" id="editName" placeholder="Full Name" required>
-    <input type="text" id="editPhone" placeholder="Phone Number" required>
-    <select id="editStatus" aria-label="Edit patient status">
-      <option value="Still Working">Still Working</option>
-      <option value="Finished">Finished</option>
-      <option value="In Labo">In Labo</option>
-    </select>
-    <input type="number" id="editAdvance" placeholder="Add Advance (MAD)">
-    <button onclick="saveEdit()">💾 Save</button>
 
-    <h3>Advance History</h3>
-    <ul id="historyList"></ul>
+  <div class="modal-content edit-modal">
+
+    <div class="modal-header">
+      <h2>
+        <i class="fa-solid fa-user-pen"></i>
+        Edit Patient
+      </h2>
+
+      
+    </div>
+
+    <div class="edit-grid">
+
+      <div class="form-group">
+        <label>
+          <i class="fa-solid fa-user"></i>
+          Full Name
+        </label>
+        <input type="text" id="editName">
+      </div>
+
+      <div class="form-group">
+        <label>
+          <i class="fa-solid fa-phone"></i>
+          Phone Number
+        </label>
+        <input type="text" id="editPhone">
+      </div>
+
+      <div class="form-group">
+        <label>
+          <i class="fa-solid fa-circle-check"></i>
+          Status
+        </label>
+
+        <select id="editStatus">
+          <option value="Still Working">Still Working</option>
+          <option value="Finished">Finished</option>
+          <option value="In Labo">In Labo</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>
+          <i class="fa-solid fa-money-bill-wave"></i>
+          Add Payment
+        </label>
+
+        <input
+          type="number"
+          id="editAdvance"
+          placeholder="0 MAD">
+      </div>
+
+    </div>
+
+    <div class="payment-history">
+
+      <h3>
+        <i class="fa-solid fa-clock-rotate-left"></i>
+        Payment History
+      </h3>
+
+      <ul id="historyList"></ul>
+
+    </div>
+
+    <div class="modal-actions">
+
+      <button
+        class="ghost-btn"
+        onclick="closeModal()">
+
+        Cancel
+
+      </button>
+
+      <button
+        class="primary-btn"
+        onclick="saveEdit()">
+
+        <i class="fa-solid fa-floppy-disk"></i>
+
+        Save Changes
+
+      </button>
+
+    </div>
+
   </div>
+
 </div>
 
 
