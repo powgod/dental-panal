@@ -5,8 +5,7 @@ firebase.auth().onAuthStateChanged((user) => {
     return;
   }
 
-  firebase.database().ref("profiles/" + user.uid).once("value")
-    .then((snapshot) => {
+firebase.database().ref("profiles/" + user.uid).on("value", (snapshot) => { 
 
       const profile = snapshot.val();
 
