@@ -64,3 +64,36 @@ function loadClinics(){
     });
 
 }
+window.manage = function(uid) {
+
+    const days = prompt(
+        "Subscription:\n\n30 = 30 Days\n90 = 90 Days\n365 = 1 Year\n\nEnter number of days:"
+    );
+
+    if (!days) return;
+
+    const end = Date.now() + (Number(days) * 86400000);
+
+    firebase.database()
+        .ref("profiles/" + uid + "/subscription")
+        .update({
+
+            status: "active",
+
+            subscriptionEnd: end
+
+        })
+        .then(() => {
+
+            alert("Subscription updated successfully.");
+
+            loadClinics();
+
+        })
+        .catch(err => {
+
+            alert(err.message);
+
+        });
+
+};
