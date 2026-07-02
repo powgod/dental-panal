@@ -38,6 +38,10 @@ if (sub.status === "trial") {
 else if(sub.status==="active"){
 
     const total=30;
+    console.log(sub);
+    console.log("subscriptionEnd:", sub.subscriptionEnd);
+    console.log("type:", typeof sub.subscriptionEnd);
+    console.log("now:", now);
     const days=Math.max(0,Math.ceil((sub.subscriptionEnd-now)/86400000));
 
     const percent=(days/total)*100;
