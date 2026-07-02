@@ -9,15 +9,21 @@ firebase.auth().onAuthStateChanged(user => {
 
     }
 
-    if (user.uid !== ADMIN_UID) {
+    console.log("Current UID:", user.uid);
+console.log("Admin UID:", ADMIN_UID);
 
-        alert("Access denied.");
+if (user.uid !== ADMIN_UID) {
 
-        location.href = "dashboard.html";
+    alert(
+        "Access denied\n\nCurrent:\n" +
+        user.uid +
+        "\n\nAdmin:\n" +
+        ADMIN_UID
+    );
 
-        return;
+    return;
 
-    }
+}
 
     loadClinics();
 
