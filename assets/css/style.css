@@ -20,7 +20,71 @@ body {
   min-height: 100vh;
   position: relative;
 }
+.admin-clinic-card{
 
+    background:#fff;
+
+    border:1px solid #e5e7eb;
+
+    border-radius:14px;
+
+    padding:18px;
+
+    margin-bottom:15px;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.05);
+
+}
+
+.admin-header{
+
+    display:flex;
+
+    justify-content:space-between;
+
+    align-items:center;
+
+    margin-bottom:15px;
+
+}
+
+.admin-header h3{
+
+    margin:0;
+
+    font-size:18px;
+
+}
+
+.admin-header small{
+
+    color:#888;
+
+}
+
+.admin-actions{
+
+    display:flex;
+
+    justify-content:flex-end;
+
+}
+
+.status-badge{
+
+    background:#eef4ff;
+
+    color:#1d7bff;
+
+    padding:6px 12px;
+
+    border-radius:20px;
+
+    font-size:13px;
+
+    font-weight:600;
+
+}
 /* Sidebar */
 .sidebar {
   width: 250px;
