@@ -1,5 +1,6 @@
-const ADMIN_UID = "RA8SwytBJdX59G8BpQcgOSSNrHJ3";
 
+const ADMIN_UID = "RA8SwytBJdX59G8BpQcgOSSNrHJ3";
+let selectedClinicUID = null;
 firebase.auth().onAuthStateChanged(user => {
 
     if (!user) {
@@ -63,11 +64,11 @@ function loadClinics(){
             
             <div class="admin-actions">
             
-                <button class="primary-btn"
-                    onclick="manage('${uid}')">
-            
-                    Manage Subscription
-            
+               <button class="primary-btn"
+                  onclick="manage('${uid}')">
+
+                       Manage
+
                 </button>
             
             </div>
@@ -81,36 +82,125 @@ function loadClinics(){
     });
 
 }
-window.manage = function(uid) {
+window.manage = function(uid){
 
-    const days = prompt(
-        "Subscription:\n\n30 = 30 Days\n90 = 90 Days\n365 = 1 Year\n\nEnter number of days:"
-    );
-
-    if (!days) return;
-
-    const end = Date.now() + (Number(days) * 86400000);
+    selectedClinicUID = uid;
 
     firebase.database()
-        .ref("profiles/" + uid + "/subscription")
-        .update({
 
-            status: "active",
+    .ref("profiles/"+uid)
 
-            subscriptionEnd: end
+    .once("value")
+
+    .then(snapshot=>{
+
+        const p = snapshot.val();
+
+        document.getElementById("adminClinicTitle").innerHTML =
+            p.clinic || "Clinic";
+
+        document.getElementById("adminStatus").innerHTML =
+            "Status : " +
+            (p.subscription?.status || "None");
+
+        document.getElementById("adminModal").style.display="flex";
+
+    });
+
+}
+window.closeAdminModal=function(){
+
+    document.getElementById("adminModal").style.display="none";
+
+}
+window.extendSubscription=function(days){
+
+    const ref=firebase.database()
+
+    .ref("profiles/"+selectedClinicUID+"/subscription");
+
+    ref.once("value").then(snapshot=>{
+
+        const sub=snapshot.val()||{};
+
+        const now=Date.now();
+
+        const start=
+
+            sub.subscriptionEnd && sub.subscriptionEnd>now
+
+            ? sub.subscriptionEnd
+
+            : now;
+
+        ref.update({
+
+            status:"active",
+
+            subscriptionEnd:start+(days*86400000)
 
         })
-        .then(() => {
 
-            alert("Subscription updated successfully.");
+        .then(()=>{
+
+            alert("Subscription updated.");
+
+            closeAdminModal();
 
             loadClinics();
 
-        })
-        .catch(err => {
-
-            alert(err.message);
-
         });
 
-};
+    });
+
+}
+window.startTrial=function(){
+
+    firebase.database()
+
+    .ref("profiles/"+selectedClinicUID+"/subscription")
+
+    .update({
+
+        status:"trial",
+
+        trialEnd:Date.now()+14*86400000
+
+    })
+
+    .then(()=>{
+
+        alert("Trial started.");
+
+        closeAdminModal();
+
+        loadClinics();
+
+    });
+
+}
+window.expireSubscription=function(){
+
+    firebase.database()
+
+    .ref("profiles/"+selectedClinicUID+"/subscription")
+
+    .update({
+
+        status:"expired",
+
+        subscriptionEnd:Date.now()
+
+    })
+
+    .then(()=>{
+
+        alert("Subscription expired.");
+
+        closeAdminModal();
+
+        loadClinics();
+
+    });
+
+}
