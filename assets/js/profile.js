@@ -46,7 +46,7 @@ firebase.auth().onAuthStateChanged((user) => {
     };
 
     profileRef
-      .set(profileData)
+      .update(profileData)
       .then(() => {
         // Show success message
         const successMsg = document.getElementById("successMessage");
