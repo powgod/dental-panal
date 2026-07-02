@@ -1,4 +1,4 @@
-const ADMIN_UID = "Ixttf55E47Zl9n6ggRMYUBkqYT62";
+const ADMIN_UID = "RA8SwytBJdX59G8BpQcgOSSNrHJ3";
 
 firebase.auth().onAuthStateChanged(user => {
 
@@ -9,17 +9,11 @@ firebase.auth().onAuthStateChanged(user => {
 
     }
 
-    console.log("Current UID:", user.uid);
-console.log("Admin UID:", ADMIN_UID);
+    if (user.uid !== ADMIN_UID) {
 
-if (user.uid !== ADMIN_UID) {
+    alert("Access denied.");
 
-    alert(
-        "Access denied\n\nCurrent:\n" +
-        user.uid +
-        "\n\nAdmin:\n" +
-        ADMIN_UID
-    );
+    location.href = "dashboard.html";
 
     return;
 
