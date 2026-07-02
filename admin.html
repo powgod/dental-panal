@@ -45,6 +45,46 @@
     </div>
 
 </div>
+
+    <div id="adminModal" class="modal">
+
+    <div class="modal-content" style="max-width:420px;">
+
+        <h2 id="adminClinicTitle">Clinic</h2>
+
+        <p id="adminStatus"></p>
+
+        <div class="modal-actions" style="margin-top:20px;display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+
+            <button class="primary-btn" onclick="extendSubscription(30)">
+                +30 Days
+            </button>
+
+            <button class="primary-btn" onclick="extendSubscription(90)">
+                +90 Days
+            </button>
+
+            <button class="primary-btn" onclick="extendSubscription(365)">
+                +365 Days
+            </button>
+
+            <button class="ghost-btn" onclick="startTrial()">
+                Trial
+            </button>
+
+            <button class="delete-btn" onclick="expireSubscription()">
+                Expire
+            </button>
+
+            <button class="ghost-btn" onclick="closeAdminModal()">
+                Close
+            </button>
+
+        </div>
+
+    </div>
+
+</div>
 <script src="assets/js/admin.js"></script>
 
 </body>
