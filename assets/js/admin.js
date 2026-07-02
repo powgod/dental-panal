@@ -1,3 +1,4 @@
+alert("admin.js loaded");
 const ADMIN_UID = "RA8SwytBJdX59G8BpQcgOSSNrHJ3";
 
 firebase.auth().onAuthStateChanged(user => {
