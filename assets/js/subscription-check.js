@@ -10,8 +10,9 @@ firebase.database().ref("profiles/" + user.uid).on("value", (snapshot) => {
       const profile = snapshot.val();
 
       if (!profile || !profile.subscription) {
-        window.location.href = "expired.html";
-        return;
+firebase.auth().signOut().then(() => {
+    window.location.href = "expired.html";
+});        return;
       }
 
       const sub = profile.subscription;
