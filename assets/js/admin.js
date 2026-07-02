@@ -39,22 +39,39 @@ function loadClinics(){
 
             const div=document.createElement("div");
 
-            div.innerHTML=`
+            div.className = "admin-clinic-card";
 
-                <hr>
-
-                <b>${data.clinicName || "No Clinic Name"}</b><br>
-
-                Doctor : ${data.name || "-"}<br>
-
-                Status : ${data.subscription?.status || "-"}<br>
-
-                <button onclick="manage('${uid}')">
-
-                    Manage
-
+            div.innerHTML = `
+            
+            <div class="admin-header">
+            
+                <div>
+            
+                    <h3>${data.clinic || "Unnamed Clinic"}</h3>
+            
+                    <small>${data.name || "-"}</small>
+            
+                </div>
+            
+                <span class="status-badge">
+            
+                    ${data.subscription?.status || "No Subscription"}
+            
+                </span>
+            
+            </div>
+            
+            <div class="admin-actions">
+            
+                <button class="primary-btn"
+                    onclick="manage('${uid}')">
+            
+                    Manage Subscription
+            
                 </button>
-
+            
+            </div>
+            
             `;
 
             container.appendChild(div);
