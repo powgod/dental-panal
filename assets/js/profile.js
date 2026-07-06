@@ -31,34 +31,55 @@ firebase.auth().onAuthStateChanged((user) => {
   });
 
   // Handle form submission
-  document.getElementById("profileForm").addEventListener("submit", (e) => {
-    e.preventDefault();
+  // Handle form submission
+const profileForm = document.getElementById("profileForm");
 
-    const profileData = {
-      name: document.getElementById("profileName").value.trim(),
-      email: user.email,
-      phone: document.getElementById("profilePhone").value.trim(),
-      specialization: document
-        .getElementById("profileSpecialization")
-        .value.trim(),
-      clinic: document.getElementById("profileClinic").value.trim(),
-      updatedAt: new Date().toISOString(),
-    };
+profileForm.addEventListener("submit", function (e) {
 
-    profileRef
-      .update(profileData)
-      .then(() => {
-        // Show success message
-        const successMsg = document.getElementById("successMessage");
-        successMsg.classList.remove("hidden");
-        setTimeout(() => {
-          successMsg.classList.add("hidden");
-        }, 3000);
-      })
-      .catch((error) => {
-        Toast.error("Error updating profile: " + error.message);
+  e.preventDefault();
+
+  const profileData = {
+    name: document.getElementById("profileName").value.trim(),
+    phone: document.getElementById("profilePhone").value.trim(),
+    specialization: document.getElementById("profileSpecialization").value.trim(),
+    clinic: document.getElementById("profileClinic").value.trim()
+  };
+
+  profileRef
+    .update(profileData)
+    .then(() => {
+
+      return profileRef.child("setup").update({
+        profile: true
       });
-  });
+
+    })
+    .then(() => {
+      console.log(localStorage.getItem("setupRedirect"));
+      const successMsg = document.getElementById("successMessage");
+      successMsg.classList.remove("hidden");
+
+      setTimeout(() => {
+
+        if (localStorage.getItem("setupRedirect") === "profile") {
+
+          localStorage.removeItem("setupRedirect");
+          window.location.href = "dashboard.html";
+
+        } else {
+
+          successMsg.classList.add("hidden");
+
+        }
+
+      }, 1200);
+
+    })
+    .catch((error) => {
+      Toast.error("Error updating profile: " + error.message);
+    });
+
+});
 
   // Logout button
   const logoutBtn = document.getElementById("logoutBtn");

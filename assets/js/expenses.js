@@ -55,8 +55,39 @@ expenseForm.addEventListener("submit", (e) => {
     return;
   }
 
-  expensesRef.push({ name, amount }).then(() => {
+  expensesRef.push({ name, amount })
+  .then(() => {
+
     expenseForm.reset();
+
+    return firebase.database()
+      .ref("profiles/" + uid + "/setup")
+      .update({
+        expense: true
+      });
+
+  })
+  .then(() => {
+
+    if (localStorage.getItem("setupRedirect") === "expense") {
+
+      localStorage.removeItem("setupRedirect");
+
+      Toast.success("🎉 Great! Your first expense has been added.");
+
+      setTimeout(() => {
+
+        window.location.href = "dashboard.html";
+
+      }, 1200);
+
+    }
+
+  })
+  .catch((err) => {
+
+    Toast.error("Error adding expense: " + err.message);
+
   });
 });
 

@@ -175,11 +175,47 @@ function syncCalendar() {
 }
 
 function saveAppointmentData(appointmentData) {
+
+  let promise;
+
   if (editingIndex !== null) {
-    return appointmentsRef.child(editingIndex).set(appointmentData);
+
+    promise = appointmentsRef.child(editingIndex).set(appointmentData);
+
   } else {
-    return appointmentsRef.push(appointmentData);
+
+    promise = appointmentsRef.push(appointmentData);
+
   }
+
+  return promise
+    .then(() => {
+
+      return firebase.database()
+        .ref("profiles/" + uid + "/setup")
+        .update({
+          appointment: true
+        });
+
+    })
+    .then(() => {
+
+      if (localStorage.getItem("setupRedirect") === "appointment") {
+
+        localStorage.removeItem("setupRedirect");
+
+        Toast.success("🎉 Great! Your first appointment has been created.");
+
+        setTimeout(() => {
+
+          window.location.href = "dashboard.html";
+
+        }, 1200);
+
+      }
+
+    });
+
 }
 
 function showAppointmentForm(mode = "add") {

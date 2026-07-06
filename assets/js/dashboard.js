@@ -806,10 +806,15 @@ function bootstrapRealtime(db, uid) {
     state.appointments = snap.val() || {};
     refreshDashboard();
   });
-  profileRef.on("value", (snap) => {
+ profileRef.on("value", (snap) => {
+
     state.profile = snap.val() || {};
+
     updateWelcome(state.profile);
-  });
+
+    renderSetup();
+
+});
 }
 
 const logoutBtn = document.getElementById("logoutBtn");
@@ -840,3 +845,144 @@ firebase.auth().onAuthStateChanged((user) => {
   setupTimeframeSwitch();
   bootstrapRealtime(db, uid);
 });
+
+document.getElementById("startOnboardingBtn").onclick = function () {
+
+  firebase.database()
+      .ref("profiles/" + uid)
+      .update({
+
+          onboardingCompleted: true
+
+      });
+
+  document.getElementById("onboardingOverlay").style.display = "none";
+
+};
+function renderSetup() {
+
+  const setup = state.profile.setup;
+
+  if (!setup) return;
+
+  // Automatically finish onboarding
+  if (
+      setup.profile &&
+      setup.patient &&
+      setup.appointment &&
+      setup.labo &&
+      setup.expense &&
+      !setup.completed
+  ) {
+
+      firebase.database()
+          .ref("profiles/" + uid + "/setup")
+          .update({
+              completed: true
+          });
+
+      if (!localStorage.getItem("setupFinished")) {
+
+          localStorage.setItem("setupFinished", "true");
+
+          Toast.success("🎉 Congratulations! Your clinic is ready!");
+
+      }
+
+  }
+
+  // Hide setup forever after completion
+  if (setup.completed) {
+
+      document.getElementById("setupCard").style.display = "none";
+
+      return;
+
+  }
+
+  document.getElementById("setupCard").style.display = "block";
+
+  const tasks = [
+
+      {
+          key: "profile",
+          title: "Complete your Profile",
+          page: "profile.html"
+      },
+
+      {
+          key: "patient",
+          title: "Add your First Patient",
+          page: "patients.html"
+      },
+
+      {
+          key: "appointment",
+          title: "Create your First Appointment",
+          page: "appointments.html"
+      },
+
+      {
+          key: "labo",
+          title: "Add your First Lab Work",
+          page: "labos.html"
+      },
+
+      {
+          key: "expense",
+          title: "Add your First Expense",
+          page: "expenses.html"
+      }
+
+  ];
+
+  let completed = 0;
+
+  const container = document.getElementById("setupTasks");
+
+  container.innerHTML = "";
+
+  tasks.forEach(task => {
+
+      if (setup[task.key]) completed++;
+
+      const div = document.createElement("div");
+
+      div.className = "setup-task";
+
+      if (setup[task.key]) div.classList.add("done");
+
+      div.innerHTML = `
+
+          <span>
+
+              ${setup[task.key] ? "✅" : "⬜"}
+
+              ${task.title}
+
+          </span>
+
+          ${
+              setup[task.key]
+                  ? ""
+                  : `<button onclick="
+                      localStorage.setItem('setupRedirect','${task.key}');
+                      location.href='${task.page}';
+                  ">
+                      Start
+                  </button>`
+          }
+
+      `;
+
+      container.appendChild(div);
+
+  });
+
+  const percent = Math.round((completed / tasks.length) * 100);
+
+  document.getElementById("setupProgressBar").style.width = percent + "%";
+
+  document.getElementById("setupPercent").innerHTML = percent + "% Complete";
+
+}

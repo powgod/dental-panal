@@ -212,11 +212,36 @@ patientForm.addEventListener("submit", function (e) {
     ],
 };
 
-  patientRef
-    .push(patient)
-    .then(() => {
-      patientForm.reset();
-    })
+patientRef
+.push(patient)
+.then(() => {
+
+    patientForm.reset();
+
+    return firebase.database()
+      .ref("profiles/" + uid + "/setup")
+      .update({
+          patient: true
+      });
+
+})
+.then(() => {
+
+    if (localStorage.getItem("setupRedirect") === "patient") {
+
+        localStorage.removeItem("setupRedirect");
+
+        Toast.success("🎉 Great! Your first patient has been added.");
+
+        setTimeout(() => {
+
+            window.location.href = "dashboard.html";
+
+        },1200);
+
+    }
+
+})
     .catch((error) => {
       Toast.error("Error adding patient: " + error.message);
     });

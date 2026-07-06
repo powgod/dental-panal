@@ -91,21 +91,30 @@ document
 
         // IMPORTANT: Return the Promise
         return profileRef.set({
-          email: user.email,
-          name: "",
-          phone: "",
-          specialization: "",
-          clinic: "",
-          createdAt: new Date().toISOString(),
+  email: user.email,
+  name: "",
+  phone: "",
+  specialization: "",
+  clinic: "",
+  createdAt: new Date().toISOString(),
 
-          subscription: {
-            status: "trial",
-            trialStart: now,
-            trialEnd: trialEnd,
-            subscriptionEnd: null
-          }
-        });
-      })
+  subscription: {
+    status: "trial",
+    trialStart: now,
+    trialEnd: trialEnd,
+    subscriptionEnd: null
+  },
+
+  setup: {
+    profile: false,
+    patient: false,
+    appointment: false,
+    labo: false,
+    expense: false,
+    completed: false
+  }
+});
+}) 
       .then(() => {
         const user = firebase.auth().currentUser;
 

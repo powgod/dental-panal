@@ -18,7 +18,7 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
   </head>
   <body>
-    <div class="container">
+    <div class="container">     
       <div class="sidebar">
         <div class="sidebar-title">🦷 ClinicPanel</div>
         <a href="dashboard.html" class="menu-link active"
@@ -109,7 +109,21 @@
         </div>
 
         <!-- KEEP EVERYTHING ELSE HERE -->
+        <div id="setupCard" class="setup-card">
 
+          <h2>👋 Welcome to ClinicPanel</h2>
+  
+          <p>Let's prepare your clinic in less than 2 minutes.</p>
+  
+          <div class="setup-progress">
+              <div id="setupProgressBar"></div>
+          </div>
+  
+          <span id="setupPercent">0% Complete</span>
+  
+          <div id="setupTasks"></div>
+  
+      </div>
         <!-- Skeleton placeholders -->
         <div class="charts-grid skeleton-block" id="chartsSkeleton">
           <div class="chart-container card skeleton-card">

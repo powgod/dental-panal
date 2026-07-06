@@ -2958,3 +2958,143 @@ box-shadow:0 10px 20px rgba(13,110,253,.25);
   }
 
 }
+
+/* onboarding */
+
+.onboarding-overlay{
+  position:fixed;
+  inset:0;
+  background:rgba(0,0,0,.55);
+
+  display:flex;
+  justify-content:center;
+  align-items:center;
+
+  z-index:99999;
+}
+
+.onboarding-card{
+
+  width:500px;
+  max-width:90%;
+
+  background:#fff;
+
+  border-radius:20px;
+
+  padding:35px;
+
+  text-align:center;
+
+  box-shadow:0 20px 60px rgba(0,0,0,.2);
+
+}
+
+.onboarding-card h1{
+
+  margin-bottom:15px;
+
+}
+
+.onboarding-card p{
+
+  color:#666;
+
+  margin-bottom:25px;
+
+}
+
+.onboarding-steps{
+
+  text-align:left;
+
+  margin:25px 0;
+
+}
+
+.step{
+
+  padding:12px;
+
+  margin-bottom:10px;
+
+  background:#f5f7fb;
+
+  border-radius:10px;
+
+}
+.setup-card{
+
+  background:#fff;
+
+  border-radius:18px;
+
+  padding:25px;
+
+  margin-bottom:25px;
+
+  box-shadow:0 10px 30px rgba(0,0,0,.08);
+
+}
+
+.setup-progress{
+
+  width:100%;
+
+  height:12px;
+
+  background:#ececec;
+
+  border-radius:30px;
+
+  overflow:hidden;
+
+  margin:15px 0;
+
+}
+
+#setupProgressBar{
+
+  width:0%;
+
+  height:100%;
+
+  background:#2563eb;
+
+  transition:.4s;
+
+}
+
+.setup-task{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+  padding:14px;
+
+  border:1px solid #eee;
+
+  border-radius:12px;
+
+  margin-top:12px;
+
+}
+
+.setup-task.done{
+
+  background:#ecfdf5;
+
+  border-color:#22c55e;
+
+}
+
+.setup-task button{
+
+  padding:8px 18px;
+
+  cursor:pointer;
+
+}

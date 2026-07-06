@@ -304,12 +304,41 @@ laboForm.addEventListener("submit", (e) => {
   } else {
     // Add new labo to Firebase
     labosRef
-      .push(newLabo)
-      .then(() => {
-        Toast.success("Labo entry added successfully.");
-        resetLaboForm();
-      })
-      .catch((err) => Toast.error("Error adding labo: " + err.message));
+    .push(newLabo)
+    .then(() => {
+  
+      Toast.success("Labo entry added successfully.");
+      resetLaboForm();
+  
+      return firebase.database()
+        .ref("profiles/" + uid + "/setup")
+        .update({
+          labo: true
+        });
+  
+    })
+    .then(() => {
+  
+      if (localStorage.getItem("setupRedirect") === "labo") {
+  
+        localStorage.removeItem("setupRedirect");
+  
+        Toast.success("🎉 Great! Your first lab work has been added.");
+  
+        setTimeout(() => {
+  
+          window.location.href = "dashboard.html";
+  
+        }, 1200);
+  
+      }
+  
+    })
+    .catch((err) => {
+  
+      Toast.error("Error adding labo: " + err.message);
+  
+    });
   }
 });
 const logoutBtn = document.getElementById("logoutBtn");
